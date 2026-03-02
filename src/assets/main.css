@@ -1,0 +1,168 @@
+:root {
+  --primary-color: #2563eb;
+  --secondary-color: #64748b;
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --save-color: #00C853;
+  --save-color-hover: #00B248;
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* Layout */
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #1e293b;
+  color: white;
+  padding: 2rem 1rem;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-x: auto;
+}
+
+/* Typography */
+h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.breadcrumbs {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+/* Table Styles */
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--card-bg);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.data-table th {
+  background: #f1f5f9;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Property Cell */
+.property-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.property-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.375rem;
+  object-fit: cover;
+  background-color: #edf2f7;
+}
+
+.property-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.property-name {
+  font-weight: 600;
+}
+
+.property-subinfo {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* Status Indicators */
+.status-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.status-yes {
+  color: var(--success-color);
+}
+
+.status-no {
+  color: var(--danger-color);
+}
+
+/* Utility */
+.text-muted {
+  color: var(--text-muted);
+}
+
+.price {
+  font-weight: 600;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background 0.2s;
+}
+
+.action-btn:hover {
+  background: #f1f5f9;
+}

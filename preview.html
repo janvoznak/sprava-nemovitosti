@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Správa nemovitostí - Prototyp Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/vue.global.js"></script>
+    <style>
+        [v-cloak] {
+            display: none !important;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .layout-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 250px;
+            background-color: #1e293b;
+            color: white;
+            padding: 2rem 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            margin-bottom: 2.5rem;
+            cursor: pointer;
+            letter-spacing: -0.025em;
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
+
+        .nav-section-title {
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .nav-list {
+            list-style: none;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #94a3b8;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-item:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-item.active {
+            color: white;
+            background-color: var(--primary-color);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem 3rem;
+            overflow-x: auto;
+        }
+
+        /* Header Styling */
+        .page-header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .breadcrumbs {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .breadcrumb-link {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb-link:hover {
+            color: var(--primary-color);
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.025em;
+        }
+
+        /* Top Action Bar */
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.625rem 1rem 0.625rem 2.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background-color: #f8fafc;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
+        .btn-danger-outline {
+            background: white;
+            border: 1px solid #fee2e2;
+            color: var(--danger-color);
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-danger-outline:hover {
+            background: #fee2e2;
+        }
+
+        /* Modern Table Styling */
+        .table-container {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .data-table th {
+            background-color: #f8fafc;
+            padding: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        .data-table tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        /* Property Cell */
+        .property-cell {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .property-img {
+            width: 44px;
+            height: 44px;
+            border-radius: 0.5rem;
+            object-fit: cover;
+            border: 1px solid #e2e8f0;
+        }
+
+        .property-main-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .property-nm {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .property-loc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.renovation {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.inactive {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* Occupancy Indicator */
+        .occupancy-container {
+            width: 100px;
+        }
+
+        .occupancy-bar-bg {
+            height: 8px;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.25rem;
+        }
+
+        .occupancy-bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .occupancy-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .price-bold {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        /* Action Buttons */
+        .actions-flex {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .action-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #94a3b8;
+        }
+
+        .action-circle:hover {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        .action-circle.delete:hover {
+            background-color: #fee2e2;
+            color: var(--danger-color);
+        }
+
+        /* Modal Styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            width: 500px;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background-color: white;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Detail/Tabs Styling */
+        .tabs-container {
+            background: white;
+            padding: 0 2rem;
+            border-bottom: 1px solid var(--border-color);
+            margin: 0 -3rem 2rem -3rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            padding: 1rem 0;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+        }
+
+        .action-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            min-width: 180px;
+            text-align: left;
+            overflow: hidden;
+        }
+
+        .menu-item {
+            padding: 0.625rem 1rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: background 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #f1f5f9;
+        }
+
+        /* Notifications */
+        .notification-toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1e293b;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInUp 0.3s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Specific Table Styles for Revisions/Meters */
+        .badge-platna {
+            background: #dcfce7 !important;
+            color: #166534 !important;
+        }
+
+        .badge-expiruje {
+            background: #fee2e2 !important;
+            color: #991b1b !important;
+        }
+
+        .revision-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        .days-remaining {
+            font-weight: 700;
+            color: #991b1b;
+            font-size: 0.8125rem;
+        }
+
+        .supplier-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .supplier-phone {
+            font-size: 0.75rem;
+            color: var(--primary-color);
+        }
+
+        .action-row-btn {
+            background: #1e293b;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.8125rem;
+            border: none;
+            cursor: pointer;
+            margin-top: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <div class="layout-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-logo" @click="setView('list')">Poski REAL</div>
+
+                <div class="nav-section">
+                    <p class="nav-section-title">HLAVNÍ MENU</p>
+                    <ul class="nav-list">
+                        <li class="nav-item" :class="{ active: currentView === 'list' }" @click="setView('list')">
+                            <span>🏠</span> Přehled
+                        </li>
+                        <li class="nav-item" :class="{ active: currentView === 'properties' }" @click="setView('list')">
+                            <span>🏢</span> Nemovitosti
+                        </li>
+                        <li class="nav-item" :class="{ active: currentView === 'tenants' }" @click="setView('tenants')">
+                            <span>👥</span> Nájemníci
+                        </li>
+                        <li class="nav-item" :class="{ active: currentView === 'finance' }" @click="setView('finance')">
+                            <span>💰</span> Finance
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+
+                <!-- View: List (Overview / Properties) -->
+                <div v-if="currentView === 'list' || currentView === 'properties'">
+                    <div class="page-header">
+                        <div>
+                            <div class="breadcrumbs">
+                                <span class="breadcrumb-link" @click="setView('list')">Správa nemovitostí</span>
+                                &nbsp;/&nbsp; {{ currentView === 'list' ? 'Přehled' : 'Seznam nemovitostí' }}
+                            </div>
+                            <h1>{{ currentView === 'list' ? '🏠 Přehled nemovitostí' : '🏢 Seznam nemovitostí' }}</h1>
+                        </div>
+                    </div>
+
+                    <div class="action-bar">
+                        <div class="search-container">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" class="search-input" v-model="searchQuery"
+                                placeholder="Hledat nemovitost podle názvu, ulice nebo obce...">
+                        </div>
+                        <button class="btn-primary" @click="openAddModal">
+                            <span>+</span> Přidat nemovitost
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox"></th>
+                                    <th>Nemovitost</th>
+                                    <th>Typ</th>
+                                    <th>Stav</th>
+                                    <th>Obsazenost</th>
+                                    <th>Měsíční nájem</th>
+                                    <th style="text-align: right;">Akce</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(p, index) in filteredProperties" :key="p.id" @click="goToDetail(p)"
+                                    style="cursor: pointer; transition: background-color 0.2s;">
+                                    <td @click.stop>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <input type="checkbox">
+                                            <span v-if="p.isParent" title="Hlavní budova">💼</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="property-cell">
+                                            <img :src="p.image" class="property-img">
+                                            <div class="property-main-info">
+                                                <span class="property-nm">{{ p.name }}</span>
+                                                <span class="property-loc">{{ p.street }} {{ p.houseNumber }}, {{ p.city
+                                                    }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">{{ p.type }}</span>
+                                    </td>
+                                    <td>
+                                        <span
+                                            :class="['status-badge', p.status === 'Aktivní' ? 'active' : 'renovation']">
+                                            {{ p.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="occupancy-container" v-if="p.occupancyRatio">
+                                            <div class="occupancy-bar-bg">
+                                                <div class="occupancy-bar-fill"
+                                                    :style="{ width: p.occupancyPercentage + '%' }"></div>
+                                            </div>
+                                            <span class="occupancy-text">{{ p.occupancyRatio }} ({{
+                                                p.occupancyPercentage }}%)</span>
+                                        </div>
+                                        <span v-else class="text-muted">N/A</span>
+                                    </td>
+                                    <td>
+                                        <span class="price-bold">{{ p.rent }}</span>
+                                    </td>
+                                    <td style="position: relative; text-align: right;">
+                                        <div class="actions-flex">
+                                            <button class="btn-danger-outline" @click.stop="confirmDelete(p)"
+                                                title="Smazat">
+                                                <span>🗑️</span>
+                                            </button>
+                                            <div class="action-circle" @click.stop="toggleActionMenu(p.id)">⋮</div>
+                                        </div>
+                                        <div v-if="activeActionMenu === p.id" class="action-menu">
+                                            <div class="menu-item" @click.stop="goToDetail(p)"><span>👁️</span> Náhled
+                                            </div>
+                                            <div class="menu-item"><span>✏️</span> Editovat</div>
+                                            <div class="menu-item"><span>➕</span> Přidat jednotku</div>
+                                            <div class="menu-item" style="color: var(--danger-color)"
+                                                @click.stop="confirmDelete(p)"><span>🗑️</span> Smazat</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="filteredProperties.length === 0">
+                                    <td colspan="7"
+                                        style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                                        <div>🔍</div>
+                                        <p>Nebyly nalezeny žádné nemovitosti odpovídající hledání.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- View: Detail -->
+                <div v-else-if="currentView === 'detail'">
+                    <div class="page-header">
+                        <div>
+                            <div class="breadcrumbs">
+                                <span class="breadcrumb-link" @click="setView('list')">Správa nemovitostí</span>
+                                &nbsp;/&nbsp; Detail nemovitosti
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                                <button class="btn-secondary" @click="setView('list')">← Zpět</button>
+                                <h1 style="flex: 1">🏢 {{ selectedProperty?.name }}</h1>
+                                <button class="btn-primary" @click="handleUpdateProperty">
+                                    <span>💾</span> Uložit změny
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tabs-container">
+                        <div class="tabs">
+                            <button class="tab-btn" :class="{ active: activeTab === 'basic' }"
+                                @click="activeTab = 'basic'">Základní info</button>
+                            <button class="tab-btn" :class="{ active: activeTab === 'tech' }"
+                                @click="activeTab = 'tech'">Technické info</button>
+                            <button class="tab-btn" :class="{ active: activeTab === 'econ' }"
+                                @click="activeTab = 'econ'">Ekonomické údaje</button>
+                            <button class="tab-btn" :class="{ active: activeTab === 'units' }"
+                                @click="activeTab = 'units'">Jednotky</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-content">
+                        <!-- Základní info -->
+                        <!-- Základní info -->
+                        <div v-if="activeTab === 'basic'" class="grid-layout">
+                            <div class="card">
+                                <h2 class="card-title">📝 Informace o nemovitosti</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>ID</label>
+                                        <input type="text" :value="selectedProperty?.id" disabled class="form-input"
+                                            style="background:#f1f5f9">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Typ</label>
+                                        <input type="text" v-model="selectedProperty.type" class="form-input">
+                                    </div>
+                                    <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                        <label>Úplný název</label>
+                                        <input type="text" v-model="selectedProperty.name" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Stav</label>
+                                        <select v-model="selectedProperty.status" class="form-input">
+                                            <option>Aktivní</option>
+                                            <option>V rekonstrukci</option>
+                                            <option>Neaktivní</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Plocha</label>
+                                        <input type="text" v-model="selectedProperty.area" class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <h2 class="card-title">👤 Vlastník a správa</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Vlastník</label>
+                                        <input type="text" v-model="selectedProperty.landlord" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Telefon</label>
+                                        <input type="text" v-model="selectedProperty.phone" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Platnost od</label>
+                                        <input type="text" v-model="selectedProperty.validFrom" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Platnost do</label>
+                                        <input type="text" v-model="selectedProperty.validTo" class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <h2 class="card-title">📍 Adresa nemovitosti</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Ulice</label>
+                                        <input type="text" v-model="selectedProperty.street" placeholder="Ulice"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Číslo popisné</label>
+                                        <input type="text" v-model="selectedProperty.houseNumber"
+                                            placeholder="Č. domovní" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Obec</label>
+                                        <input type="text" v-model="selectedProperty.city" placeholder="Obec"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>PSČ</label>
+                                        <input type="text" v-model="selectedProperty.zipCode" placeholder="PSČ"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                        <label>Katastrální území</label>
+                                        <input type="text" v-model="selectedProperty.cadastralArea"
+                                            placeholder="Katastrální území" class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ostatní záložky (Placeholder) -->
+                        <!-- Technical Info Tab -->
+                        <div v-else-if="activeTab === 'tech'" class="tab-pane grid-layout">
+                            <div class="card">
+                                <h2 class="card-title">🏗️ Technické údaje o budově</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Budova</label>
+                                        <select v-model="selectedProperty.tech_building" class="form-input">
+                                            <option value="A">Budova A</option>
+                                            <option value="B">Budova B</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Stav objektu</label>
+                                        <select v-model="selectedProperty.tech_state" class="form-input">
+                                            <option>Velmi dobrý</option>
+                                            <option>Dobrý</option>
+                                            <option>Udržovaný</option>
+                                            <option>Novostavba</option>
+                                            <option>Před rekonstrukcí</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Umístění</label>
+                                        <input type="text" v-model="selectedProperty.tech_location"
+                                            placeholder="Umístění" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Typ objektu</label>
+                                        <input type="text" v-model="selectedProperty.tech_type"
+                                            placeholder="Typ objektu" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Velikost</label>
+                                        <input type="text" v-model="selectedProperty.tech_size" placeholder="Velikost"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Typ stavby</label>
+                                        <input type="text" v-model="selectedProperty.tech_construction"
+                                            placeholder="Typ stavby" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Počet podlaží</label>
+                                        <input type="number" v-model="selectedProperty.tech_floors" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Počet podzemních podlaží</label>
+                                        <input type="number" v-model="selectedProperty.tech_floors_under"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Plocha pozemku (m²)</label>
+                                        <input type="number" v-model="selectedProperty.tech_land_area"
+                                            class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="margin-top: 1.5rem;">
+                                <h2 class="card-title">⚡ Energetická náročnost budovy</h2>
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label>Třída energetické náročnosti</label>
+                                        <select v-model="selectedProperty.energy_class" class="form-input">
+                                            <option>A - Mimořádně úsporná</option>
+                                            <option>B - Velmi úsporná</option>
+                                            <option>C - Úsporná</option>
+                                            <option>D - Méně úsporná</option>
+                                            <option>E - Nehospodárná</option>
+                                            <option>F - Velmi nehospodárná</option>
+                                            <option>G - Mimořádně nehospodárná</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Dle vyhlášky č.</label>
+                                        <select v-model="selectedProperty.energy_law" class="form-input">
+                                            <option>78/2013 Sb.</option>
+                                            <option>264/2020 Sb.</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ukazatel (kWh/m² za rok)</label>
+                                        <input type="number" v-model="selectedProperty.energy_indicator"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>EIC kód (plyn)</label>
+                                        <input type="text" v-model="selectedProperty.energy_eic" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>EAN kód (elektřina)</label>
+                                        <input type="text" v-model="selectedProperty.energy_ean" class="form-input">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label>Vytápění</label>
+                                        <input type="text" v-model="selectedProperty.energy_heating" class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Economic Data Tab -->
+                        <div v-else-if="activeTab === 'econ'" class="tab-pane grid-layout">
+                            <div class="card">
+                                <h2 class="card-title">💰 Měsíční platby</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Nájemné (Kč)</label>
+                                        <input type="number" v-model="selectedProperty.econ_rent" placeholder="0"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Zálohy na služby (Kč)</label>
+                                        <input type="number" v-model="selectedProperty.econ_services" placeholder="0"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fond oprav (Kč)</label>
+                                        <input type="number" v-model="selectedProperty.econ_repairs" placeholder="0"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Plocha pro výpočet služeb (m²)</label>
+                                        <input type="number" v-model="selectedProperty.econ_area_services"
+                                            placeholder="0" class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="margin-top: 1.5rem;">
+                                <h2 class="card-title">🧾 Jednorázové platby & Ostatní</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Kauce (Kč)</label>
+                                        <input type="number" v-model="selectedProperty.econ_deposit" placeholder="0"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Provize (Kč)</label>
+                                        <input type="number" v-model="selectedProperty.econ_commission" placeholder="0"
+                                            class="form-input">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label>Poznámka k ekonomice</label>
+                                        <textarea v-model="selectedProperty.econ_note" rows="3"
+                                            placeholder="Poznámka..." class="form-input"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Units Tab -->
+                        <div v-else-if="activeTab === 'units'" class="tab-pane">
+                            <div class="card no-padding">
+                                <div class="card-header-flex"
+                                    style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                                    <h2 class="card-title" style="margin-bottom: 0;">🏢 Seznam jednotek</h2>
+                                    <button class="btn-primary" @click="showUnitModal = true"><span>+</span> Přidat
+                                        jednotku</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Jednotka / Dispozice</th>
+                                                <th>Plocha</th>
+                                                <th>Smlouva</th>
+                                                <th>Nájemník</th>
+                                                <th>Obsazenost</th>
+                                                <th>Nájemné</th>
+                                                <th>Stav</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="unit in selectedProperty.units" :key="unit.id">
+                                                <td class="text-muted">{{ unit.id }}</td>
+                                                <td>
+                                                    <div class="unit-info">
+                                                        <span class="unit-label" style="font-weight: 600;">{{ unit.label
+                                                            }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>{{ unit.area }}</td>
+                                                <td><span class="text-small">{{ unit.validity }}</span></td>
+                                                <td>
+                                                    <div class="tenant-info">
+                                                        <span class="tenant-name">{{ unit.tenant }}</span>
+                                                        <span class="tenant-phone text-muted"
+                                                            style="font-size: 0.8em; display: block;">{{ unit.phone
+                                                            }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">{{ unit.occupancy }}</td>
+                                                <td class="price" style="font-weight: 600;">{{ (unit.rent ||
+                                                    0).toLocaleString() }} Kč</td>
+                                                <td>
+                                                    <span class="status-badge"
+                                                        :class="unit.status === 'Obsazeno' ? 'occupied' : 'vacant'"
+                                                        style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem;">
+                                                        {{ unit.status }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="!selectedProperty.units || selectedProperty.units.length === 0">
+                                                <td colspan="8" class="text-center"
+                                                    style="padding: 2rem; color: #94a3b8;">
+                                                    Žádné jednotky k zobrazení.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Revize a měřidla -->
+                        <div v-else-if="activeTab === 'revize'">
+                            <div class="card no-padding" style="margin-bottom: 2rem;">
+                                <div
+                                    style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                                    <h2 class="card-title" style="margin-bottom: 0;">📋 Revize a technické kontroly</h2>
+                                </div>
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Typ revize</th>
+                                            <th>Datum</th>
+                                            <th>Platnost do</th>
+                                            <th>Stav</th>
+                                            <th>Technik / Dodavatel</th>
+                                            <th style="text-align: right;">Akce</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="r in selectedProperty.revisions" :key="r.type">
+                                            <td>
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <span>📝</span>
+                                                    <div style="display: flex; flex-direction: column;">
+                                                        <span style="font-weight: 600;">{{ r.type }}</span>
+                                                        <span class="revision-desc">{{ r.description }}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>{{ r.date }}</td>
+                                            <td>
+                                                <div style="display: flex; flex-direction: column;">
+                                                    <span>{{ r.validUntil }}</span>
+                                                    <span class="days-remaining" v-if="r.daysLeft <= 100">za {{
+                                                        r.daysLeft
+                                                        }} dní</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    :class="['status-badge', r.status === 'Platná' ? 'badge-platna' : 'badge-expiruje']">
+                                                    {{ r.status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="supplier-info">
+                                                    <span style="font-weight: 500;">{{ r.technician }}</span>
+                                                    <span class="supplier-phone">{{ r.phone }}</span>
+                                                </div>
+                                            </td>
+                                            <td style="text-align: right;">
+                                                <div style="display: flex; justify-content: flex-end; gap: 4px;">
+                                                    <div class="action-circle">✏️</div>
+                                                    <div class="action-circle">📎</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div style="padding: 1rem 1.5rem;">
+                                    <button class="action-row-btn"><span>+</span> Přidat novou revizi</button>
+                                </div>
+                            </div>
+
+                            <div class="card no-padding">
+                                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                                    <h2 class="card-title" style="margin-bottom: 0;">⏲️ Stavy měřidel</h2>
+                                </div>
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Typ měřidla</th>
+                                            <th>Výrobní číslo</th>
+                                            <th>Poslední stav</th>
+                                            <th>Datum odečtu</th>
+                                            <th style="text-align: right;">Akce</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="m in selectedProperty.meters" :key="m.serialNumber">
+                                            <td>
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <span>💧</span>
+                                                    <span style="font-weight: 600;">{{ m.type }}</span>
+                                                </div>
+                                            </td>
+                                            <td><code
+                                                    style="background: #f1f5f9; padding: 2px 4px; border-radius: 4px;">{{ m.serialNumber }}</code>
+                                            </td>
+                                            <td style="font-weight: 700;">{{ m.lastValue }}</td>
+                                            <td>{{ m.date }}</td>
+                                            <td style="text-align: right;">
+                                                <div class="action-circle">📝</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div v-else class="card">
+                            <p class="text-muted">Tato sekce ({{ activeTab }}) je v přípravě pro tento prototyp.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placeholder views for other menu items -->
+                <div v-else>
+                    <h1>{{ currentView.toUpperCase() }}</h1>
+                    <div class="card" style="margin-top: 2rem;">
+                        <p class="text-muted">Tato sekce je v tomto prototypu momentálně nedostupná.</p>
+                        <button class="btn-primary" style="margin-top: 1rem;" @click="setView('list')">Zpět na
+                            přehled</button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- Add Property Modal -->
+        <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal" style="display: none"
+            :style="{ display: 'flex' }">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">🏢 Nová nemovitost</h2>
+                    <button class="modal-close" @click="closeAddModal">&times;</button>
+                </div>
+
+                <form @submit.prevent="handleSaveProperty">
+                    <div class="form-group">
+                        <label>Název</label>
+                        <input type="text" v-model="newPropertyForm.name" class="form-input"
+                            placeholder="Např. Rezidence Eliška" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Ulice a č.p.</label>
+                        <input type="text" v-model="newPropertyForm.street" class="form-input"
+                            placeholder="Např. Elišky Přemyslovny 402" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Obec</label>
+                        <input type="text" v-model="newPropertyForm.city" class="form-input" placeholder="Např. Praha"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select v-model="newPropertyForm.status" class="form-input">
+                            <option value="Aktivní">Aktivní</option>
+                            <option value="V rekonstrukci">V rekonstrukci</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" @click="closeAddModal">Zrušit</button>
+                        <button type="submit" class="btn-primary">Uložit nemovitost</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div v-if="notification" class="notification-toast" style="display: none" :style="{ display: 'flex' }">
+            <span>✅</span> {{ notification }}
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                // Application State
+                const currentView = ref('list');
+                const activeTab = ref('basic');
+                const searchQuery = ref('');
+                const showAddModal = ref(false);
+                const activeActionMenu = ref(null);
+                const notification = ref(null);
+                const selectedProperty = ref(null);
+
+                // Mock Data
+                const properties = ref([
+                    {
+                        id: 'N001',
+                        name: 'Slévárenská 404/13',
+                        city: 'Ostrava',
+                        street: 'Slévárenská',
+                        houseNumber: '404/13',
+                        zipCode: '709 00',
+                        cadastralArea: 'Mariánské Hory',
+                        type: 'Budova',
+                        area: '1240 m²',
+                        validFrom: '1.11.2024',
+                        validTo: '31.10.2025',
+                        landlord: 'Petr Jurčík',
+                        phone: '+420 727 777 666',
+                        image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop',
+                        occupancyRatio: '10/12',
+                        occupancyPercentage: 83,
+                        status: 'Aktivní',
+                        isParent: true,
+                        rent: '45 000 Kč'
+                    },
+                    {
+                        id: 'N002',
+                        name: 'Byt č. 001 (1+1)',
+                        city: 'Ostrava',
+                        street: 'Slévárenská',
+                        houseNumber: '404/13',
+                        type: 'Jednotka',
+                        image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=200&auto=format&fit=crop',
+                        occupancyRatio: '1/2',
+                        occupancyPercentage: 50,
+                        status: 'Aktivní',
+                        isParent: false,
+                        rent: '10 000 Kč'
+                    },
+                    {
+                        id: 'N003',
+                        name: 'Byt č. 002 (2+kk)',
+                        city: 'Ostrava',
+                        street: 'Slévárenská',
+                        houseNumber: '404/13',
+                        type: 'Jednotka',
+                        image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=200&auto=format&fit=crop',
+                        occupancyRatio: '0/2',
+                        occupancyPercentage: 0,
+                        status: 'V rekonstrukci',
+                        isParent: false,
+                        rent: '12 500 Kč'
+                    },
+                    {
+                        id: 'N004',
+                        name: 'Nebytový prostor 101',
+                        city: 'Ostrava',
+                        street: 'Slévárenská',
+                        houseNumber: '404/13',
+                        type: 'Komerční',
+                        image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=200&auto=format&fit=crop',
+                        occupancyRatio: '2/2',
+                        occupancyPercentage: 100,
+                        status: 'Aktivní',
+                        isParent: false,
+                        rent: '25 000 Kč'
+                    }
+                ]);
+
+                // Initial Mock Data and Expansion
+                onMounted(() => {
+                    // Populate extra data for N001
+                    const mainProp = properties.value.find(p => p.id === 'N001');
+                    if (mainProp) {
+                        mainProp.revisions = [
+                            { type: 'Elektřina', date: '15.10.2024', validUntil: '15.10.2026', status: 'Platná', technician: 'Ing. Marek Svoboda', phone: '+420 608 123 456', description: 'Pravidelná revize elektroinstalace', daysLeft: 620 },
+                            { type: 'Plyn', date: '01.09.2024', validUntil: '01.09.2025', status: 'Platná', technician: 'Jan Horák', phone: '+420 777 555 444', description: 'Revize plynového kotle a rozvodů', daysLeft: 210 },
+                            { type: 'Výtahy', date: '10.01.2024', validUntil: '10.01.2025', status: 'Expiruje', technician: 'LiftService s.r.o.', phone: '+420 222 111 000', description: 'Čtvrtletní servisní prohlídka', daysLeft: 45 }
+                        ];
+                        mainProp.meters = [
+                            { type: 'Elektroměr', serialNumber: 'EL-987654', lastValue: '12450 kWh', date: '01.01.2025' },
+                            { type: 'Vodoměr SV', serialNumber: 'W-00123', lastValue: '452 m³', date: '31.12.2024' },
+                            { type: 'Plynoměr', serialNumber: 'G-554433', lastValue: '890 m³', date: '15.01.2025' }
+                        ];
+                        mainProp.units = [
+                            { id: '0124', label: 'Byt č. 001 (1+1)', area: '60 m² (užitná 52 m²)', validity: 'od: 1.11.2024 do: 31.10.2025', tenant: 'Jan Novák', phone: '+420 601 234 567', occupancy: '1/2', deposit: 'Ano (10 000 Kč)', rent: 10000, status: 'Obsazeno' },
+                            { id: '0125', label: 'Byt č. 002 (2+kk)', area: '75 m² (užitná 68 m²)', validity: '-', tenant: '-', phone: '-', occupancy: '0/2', deposit: 'Ne', rent: 12500, status: 'Volný' }
+                        ];
+
+                        // Tech & Econ Data
+                        Object.assign(mainProp, {
+                            tech_building: 'A', tech_state: 'Velmi dobrý', tech_location: 'Klidná část obce', tech_type: 'Činžovní dům',
+                            tech_size: 'Velký', tech_construction: 'Cihlová', tech_floors: 5, tech_floors_under: 1, tech_land_area: 800,
+                            energy_class: 'B - Velmi úsporná', energy_law: '78/2013 Sb.', energy_indicator: 120, energy_eic: 'GAS123456789',
+                            energy_ean: 'EAN987654321', energy_heating: 'Ústřední dálkové',
+                            econ_rent: 45000, econ_services: 5000, econ_repairs: 2000, econ_deposit: 150000,
+                            econ_commission: 45000, econ_area_services: 1100, econ_note: 'Nájemné splatné k 15. v měsíci.'
+                        });
+                    }
+                });
+
+                const newPropertyForm = ref({
+                    name: '',
+                    street: '',
+                    city: '',
+                    status: 'Aktivní'
+                });
+
+                // Computed: Real-time Search
+                const filteredProperties = computed(() => {
+                    const q = searchQuery.value.toLowerCase().trim();
+                    if (!q) return properties.value;
+                    return properties.value.filter(p =>
+                        p.name.toLowerCase().includes(q) ||
+                        p.street.toLowerCase().includes(q) ||
+                        p.city.toLowerCase().includes(q)
+                    );
+                });
+
+                // Methods
+                const setView = (view) => {
+                    currentView.value = view;
+                    activeActionMenu.value = null;
+                };
+
+                const goToDetail = (property) => {
+                    selectedProperty.value = { ...property };
+                    currentView.value = 'detail';
+                    activeTab.value = 'basic';
+                    activeActionMenu.value = null;
+                };
+
+                const openAddModal = () => {
+                    newPropertyForm.value = { name: '', street: '', city: '', status: 'Aktivní' };
+                    showAddModal.value = true;
+                };
+
+                const closeAddModal = () => {
+                    showAddModal.value = false;
+                };
+
+                const handleSaveProperty = () => {
+                    const id = 'N' + (properties.value.length + 1).toString().padStart(3, '0');
+                    const newItem = {
+                        ...newPropertyForm.value,
+                        id: id,
+                        type: 'Budova',
+                        image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=200&auto=format&fit=crop',
+                        occupancyRatio: '0/0',
+                        occupancyPercentage: 0,
+                        rent: '0 Kč',
+                        isParent: true,
+                        houseNumber: ''
+                    };
+                    properties.value.unshift(newItem); // Add to top
+                    showAddModal.value = false;
+                    showToast('Nemovitost byla úspěšně přidána.');
+                };
+
+                const confirmDelete = (property) => {
+                    if (confirm(`Opravdu chcete smazat nemovitost "${property.name}"?`)) {
+                        properties.value = properties.value.filter(p => p.id !== property.id);
+                        showToast('Záznam byl odstraněn.');
+                    }
+                    activeActionMenu.value = null;
+                };
+
+                const handleUpdateProperty = () => {
+                    // Find in main array and update
+                    const index = properties.value.findIndex(p => p.id === selectedProperty.value.id);
+                    if (index !== -1) {
+                        properties.value[index] = { ...selectedProperty.value };
+                        showToast('Všechny změny byly uloženy do systému.');
+                    }
+                };
+
+                const toggleActionMenu = (id) => {
+                    activeActionMenu.value = activeActionMenu.value === id ? null : id;
+                };
+
+                const showToast = (msg) => {
+                    notification.value = msg;
+                    setTimeout(() => { notification.value = null; }, 3000);
+                };
+
+                // Close menu on outside click
+                onMounted(() => {
+                    window.addEventListener('click', (e) => {
+                        if (!e.target.closest('.action-circle') && !e.target.closest('.action-menu')) {
+                            activeActionMenu.value = null;
+                        }
+                    });
+                });
+
+                return {
+                    currentView, activeTab, searchQuery, showAddModal, activeActionMenu,
+                    notification, selectedProperty, properties, newPropertyForm,
+                    filteredProperties, setView, goToDetail, openAddModal, closeAddModal,
+                    handleSaveProperty, confirmDelete, toggleActionMenu, handleUpdateProperty
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
