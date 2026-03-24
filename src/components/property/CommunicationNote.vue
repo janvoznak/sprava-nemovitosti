@@ -1,5 +1,5 @@
 <template>
-  <div class="communication-note" :class="`type-${communication.type}`">
+  <div class="communication-note animate-slide-up" :class="`type-${communication.type}`">
     <!-- Timeline Marker -->
     <div class="timeline-marker" :style="{ backgroundColor: getTypeColor(communication.type) }"></div>
     
@@ -212,13 +212,16 @@ const downloadAttachment = (attachment) => {
   flex: 1;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.25rem;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .communication-note:hover .note-content {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-premium);
+  transform: translateX(4px);
+  border-color: var(--primary-color);
 }
 
 .note-header {

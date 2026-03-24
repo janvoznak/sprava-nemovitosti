@@ -23,16 +23,16 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="loading-container">
+    <div v-if="loading" class="loading-container glass animate-fade">
       <div class="loading-spinner"></div>
-      <p>Načítání finančních dat...</p>
+      <p class="loading-text">Načítání finančních dat...</p>
     </div>
-
+    
     <!-- Finance Content -->
-    <div v-else class="finance-content">
+    <div v-else class="finance-content animate-slide-up">
       <!-- KPI Cards -->
       <div class="kpi-grid">
-        <div class="kpi-card">
+        <div class="kpi-card premium-card">
           <div class="kpi-header">
             <span class="kpi-icon income">💰</span>
             <span class="kpi-label">Celkové příjmy měsíc</span>
@@ -44,7 +44,7 @@
           </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card premium-card">
           <div class="kpi-header">
             <span class="kpi-icon expense">📊</span>
             <span class="kpi-label">Celkové výdaje měsíc</span>
@@ -56,7 +56,7 @@
           </div>
         </div>
 
-        <div class="kpi-card highlight">
+        <div class="kpi-card premium-card highlight">
           <div class="kpi-header">
             <span class="kpi-icon profit">📈</span>
             <span class="kpi-label">Čistý zisk měsíc</span>
@@ -73,23 +73,31 @@
 
       <!-- Incomes and Expenses Tables -->
       <div class="tables-grid">
-        <IncomesTable 
-          :incomes="incomes" 
-          @update-status="handleUpdateIncomeStatus"
-        />
-        <ExpensesTable 
-          :expenses="expenses" 
-        />
+        <div class="table-wrapper animate-slide-up" style="animation-delay: 0.1s">
+          <IncomesTable 
+            :incomes="incomes" 
+            @update-status="handleUpdateIncomeStatus"
+          />
+        </div>
+        <div class="table-wrapper animate-slide-up" style="animation-delay: 0.2s">
+          <ExpensesTable 
+            :expenses="expenses" 
+          />
+        </div>
       </div>
 
       <!-- Cash Flow Chart -->
-      <CashFlowChart :cash-flow-data="cashFlowData" />
+      <div class="chart-wrapper animate-slide-up" style="animation-delay: 0.3s">
+        <CashFlowChart :cash-flow-data="cashFlowData" />
+      </div>
 
       <!-- Forecast -->
-      <ForecastSection 
-        :forecast="forecast" 
-        :avg-cash-flow="avgCashFlow"
-      />
+      <div class="forecast-wrapper animate-slide-up" style="animation-delay: 0.4s">
+        <ForecastSection 
+          :forecast="forecast" 
+          :avg-cash-flow="avgCashFlow"
+        />
+      </div>
     </div>
 
     <!-- Add Transaction Modal -->

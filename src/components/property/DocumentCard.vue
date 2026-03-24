@@ -1,5 +1,5 @@
 <template>
-  <div class="document-card" :class="`category-${document.category}`">
+  <div class="document-card premium-card animate-scale-in" :class="`category-${document.category}`">
     <div class="document-icon-wrapper">
       <div class="document-icon">
         {{ getFileIcon(document.fileType) }}
