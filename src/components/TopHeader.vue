@@ -375,14 +375,24 @@ const vClickOutside = {
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid transparent;
   border-radius: 6px;
-  color: white;
-  font-size: 0.875rem;
+  color: #FFFFFF;
+  font-family: "Open Sans", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
   transition: all 0.2s;
   outline: none;
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: #FFFFFF;
+  font-family: "Open Sans", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  opacity: 0.7;
 }
 
 .search-input:focus {
