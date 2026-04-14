@@ -3,6 +3,7 @@
 ## Přehled projektu
 SPA prototyp aplikace pro správu pronájmů nemovitostí. Určen k prezentaci klientovi — bez backendu, vše běží na mock datech v prohlížeči.
 
+- **Projektová složka**: `/Users/poski/Documents/Claude/sprava-nemovitosti-claude`
 - Nasazení: GitHub → Vercel (auto-deploy při push na `main`)
 - Repozitář: `janvoznak/sprava-nemovitosti`
 - Live URL: https://sprava-nemovitosti.vercel.app
@@ -106,18 +107,35 @@ VITE_DEBUG=          # true = console logging API volání
 ```
 Žádné z těchto proměnných neobsahují tajná data — jsou to build-time konfigurace.
 
+## Root-level artefakty (Antigravity scaffolding)
+Tyto soubory v rootu projektu nejsou součástí Vite aplikace — jsou to pozůstatky z Antigravity generátoru:
+- `antigravity-test.txt` — prázdný soubor
+- `test` — jednořádkový textový soubor
+- `preview.html` — standalone HTML prototyp (bez Vite)
+- `js/vue.global.js` — Vue CDN stub pro preview.html
+
+Nemazat bez konzultace (mohou být referenční materiál pro klienta), ale do buildu nevstupují.
+
 ## Vývoj
 ```bash
+npm install      # nutné po prvním klonování (node_modules není v gitu)
 npm run dev      # dev server na http://localhost:5173
 npm run build    # produkční build do dist/
 npm run preview  # preview buildu lokálně
 ```
 
 ## Deploy
-Push na `main` → automatický deploy na Vercel.
+Push na `main` → automatický deploy na Vercel (GitHub integrace).
 
-Pro manuální deploy:
+Pro manuální deploy přes CLI:
 ```bash
-~/.npm-global/bin/vercel deploy --yes   # preview
-~/.npm-global/bin/vercel deploy --prod  # produkce (potvrdit!)
+# Vercel CLI je nainstalován bez sudo:
+~/.npm-global/bin/vercel
+
+# Při prvním použití v naklonované složce je nutné:
+~/.npm-global/bin/vercel link    # propojí složku s Vercel projektem
+
+~/.npm-global/bin/vercel deploy --yes        # preview
+~/.npm-global/bin/vercel deploy --prod --yes # produkce (potvrdit!)
 ```
+Poznámka: `.vercel/` není v gitu — proto je potřeba `vercel link` po každém čerstvém klonování.
