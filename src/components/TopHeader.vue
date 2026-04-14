@@ -343,7 +343,7 @@ const vClickOutside = {
 <style scoped>
 .top-header {
   height: 64px;
-  background: #1976D2; /* Match Sidebar Blue */
+  background: #1565C0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -446,7 +446,7 @@ const vClickOutside = {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  border: 2px solid #1976D2;
+  border: 2px solid #1565C0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 

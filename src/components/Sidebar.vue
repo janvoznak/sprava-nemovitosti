@@ -289,7 +289,7 @@ watch(() => route.path, (newPath) => {
 <style scoped>
 .sidebar {
   width: 260px;
-  background: #2563eb;
+  background: #1565C0;
   color: #FFFFFF;
   font-family: "Open Sans", sans-serif;
   font-style: normal;
