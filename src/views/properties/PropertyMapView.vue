@@ -12,19 +12,25 @@
       <!-- Sidebar List -->
       <div class="properties-sidebar">
         <div class="sidebar-header">
-          <input type="text" placeholder="Hledat adresu..." class="search-input">
-          <button class="filter-btn">
-            <span class="material-icons">tune</span>
-          </button>
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Hledat nemovitost..."
+            class="search-input"
+          />
         </div>
 
-        <div class="properties-list">
-          <div 
-            v-for="prop in properties" 
+        <div v-if="loading" class="loading-list">
+          <div class="mini-spinner"></div>
+        </div>
+
+        <div v-else class="properties-list">
+          <div
+            v-for="prop in filteredProperties"
             :key="prop.id"
             class="property-card"
             :class="{ active: selectedId === prop.id }"
-            @click="selectProperty(prop.id)"
+            @click="selectProperty(prop)"
           >
             <div class="prop-icon">
               <span class="material-icons">{{ getIcon(prop.type) }}</span>
@@ -32,113 +38,114 @@
             <div class="prop-info">
               <div class="prop-name">{{ prop.name }}</div>
               <div class="prop-addr">{{ prop.street }}, {{ prop.city }}</div>
-              <div class="prop-status" :class="prop.status">
-                {{ prop.statusLabel }}
+              <div class="prop-meta">
+                <span class="occupancy-badge" :class="getOccupancyClass(prop.occupancyPercentage)">
+                  {{ prop.occupancyPercentage }}% obsazeno
+                </span>
               </div>
             </div>
+          </div>
+
+          <div v-if="filteredProperties.length === 0" class="empty-list">
+            <span class="material-icons">search_off</span>
+            <p>Žádné výsledky</p>
           </div>
         </div>
       </div>
 
-      <!-- Map Area (Mock) -->
+      <!-- Leaflet Map -->
       <div class="map-container">
-        <div class="map-placeholder">
-          <div class="map-bg"></div>
-          
-          <!-- Mock Pins -->
-          <div 
-            v-for="prop in properties" 
+        <l-map
+          ref="mapRef"
+          :zoom="zoom"
+          :center="center"
+          class="leaflet-map"
+          @ready="onMapReady"
+        >
+          <l-tile-layer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          />
+
+          <l-marker
+            v-for="prop in propertiesWithCoords"
             :key="prop.id"
-            class="map-pin"
-            :class="{ active: selectedId === prop.id }"
-            :style="{ top: prop.y + '%', left: prop.x + '%' }"
-            @click="selectProperty(prop.id)"
+            :lat-lng="[prop.lat, prop.lng]"
+            @click="selectProperty(prop)"
           >
-            <span class="material-icons">location_on</span>
-            <div class="pin-tooltip">{{ prop.name }}</div>
-          </div>
-
-          <!-- Zoom Controls -->
-          <div class="map-controls">
-            <button><span class="material-icons">add</span></button>
-            <button><span class="material-icons">remove</span></button>
-            <button><span class="material-icons">my_location</span></button>
-          </div>
-        </div>
-
-        <!-- Selected Property Detail Overlay -->
-        <transition name="slide-up">
-          <div v-if="selectedProperty" class="map-detail-card">
-            <div class="detail-header">
-              <h3>{{ selectedProperty.name }}</h3>
-              <button @click="selectedId = null" class="close-btn">
-                <span class="material-icons">close</span>
-              </button>
-            </div>
-            <div class="detail-body">
-              <img :src="selectedProperty.image" alt="Property" class="detail-img">
-              <div class="detail-stats">
-                <div class="stat">
-                  <span class="label">Jednotek</span>
-                  <span class="val">{{ selectedProperty.units }}</span>
+            <l-popup>
+              <div class="popup-content">
+                <strong>{{ prop.name }}</strong>
+                <p class="popup-addr">{{ prop.street }}, {{ prop.city }}</p>
+                <div class="popup-stats">
+                  <span>{{ prop.occupancyRatio }} obsazeno</span>
+                  <span>{{ prop.type }}</span>
                 </div>
-                <div class="stat">
-                  <span class="label">Obsazenost</span>
-                  <span class="val">{{ selectedProperty.occupancy }}%</span>
-                </div>
+                <button class="popup-btn" @click="goToDetail(prop.id)">
+                  Zobrazit detail →
+                </button>
               </div>
-              <button class="btn-primary full-width" @click="goToDetail(selectedProperty.id)">
-                Zobrazit detail
-              </button>
-            </div>
-          </div>
-        </transition>
+            </l-popup>
+          </l-marker>
+        </l-map>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet';
+import 'leaflet/dist/leaflet.css';
 import BreadcrumbNav from '@/components/BreadcrumbNav.vue';
+import { propertyService } from '@/services/propertyService';
+
+// Fix Leaflet default icon paths broken by Vite
+import L from 'leaflet';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl });
 
 const router = useRouter();
+const mapRef = ref(null);
+const loading = ref(true);
+const allProperties = ref([]);
 const selectedId = ref(null);
+const search = ref('');
 
-const properties = ref([
-  { 
-    id: 1, name: 'Bytový dům Na Kopci', street: 'Na Kopci 123', city: 'Praha 5', 
-    type: 'apartment', status: 'ok', statusLabel: 'V pořádku',
-    units: 12, occupancy: 92, image: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994',
-    x: 40, y: 30 
-  },
-  { 
-    id: 2, name: 'Villa Nová', street: 'Vila Nova 45', city: 'Praha 6', 
-    type: 'house', status: 'warning', statusLabel: 'Oprava střechy',
-    units: 3, occupancy: 100, image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b91d',
-    x: 65, y: 45 
-  },
-  { 
-    id: 3, name: 'Komerční centrum A2', street: 'Průmyslová 88', city: 'Brno', 
-    type: 'commercial', status: 'ok', statusLabel: 'V pořádku',
-    units: 15, occupancy: 85, image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab',
-    x: 25, y: 70 
-  },
-   { 
-    id: 4, name: 'Apartmány Slunečná', street: 'Slunečná 12', city: 'Lipno', 
-    type: 'apartment', status: 'ok', statusLabel: 'V pořádku',
-    units: 8, occupancy: 50, image: 'https://images.unsplash.com/photo-1460317442991-0ec209397118',
-    x: 55, y: 75 
+const zoom = ref(7);
+const center = ref([49.8, 15.5]); // Centrum ČR
+
+onMounted(async () => {
+  try {
+    allProperties.value = await propertyService.getProperties();
+  } finally {
+    loading.value = false;
   }
-]);
+});
 
-const selectedProperty = computed(() => 
-  properties.value.find(p => p.id === selectedId.value)
+const propertiesWithCoords = computed(() =>
+  allProperties.value.filter(p => p.lat && p.lng)
 );
 
-const selectProperty = (id) => {
-  selectedId.value = id;
+const filteredProperties = computed(() => {
+  if (!search.value.trim()) return propertiesWithCoords.value;
+  const q = search.value.toLowerCase();
+  return propertiesWithCoords.value.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.city.toLowerCase().includes(q) ||
+    p.street.toLowerCase().includes(q)
+  );
+});
+
+const selectProperty = (prop) => {
+  selectedId.value = prop.id;
+  if (prop.lat && prop.lng && mapRef.value?.leafletObject) {
+    mapRef.value.leafletObject.flyTo([prop.lat, prop.lng], 14, { duration: 1 });
+  }
 };
 
 const goToDetail = (id) => {
@@ -146,14 +153,24 @@ const goToDetail = (id) => {
 };
 
 const getIcon = (type) => {
-  const map = { apartment: 'apartment', house: 'home', commercial: 'store' };
+  const map = { 'Bytový dům': 'apartment', 'Rodinný dům': 'home', 'Komerční': 'store' };
   return map[type] || 'business';
+};
+
+const getOccupancyClass = (pct) => {
+  if (pct >= 80) return 'high';
+  if (pct >= 50) return 'mid';
+  return 'low';
+};
+
+const onMapReady = () => {
+  // Map is ready
 };
 </script>
 
 <style scoped>
 .map-view {
-  height: calc(100vh - 80px); /* Adjust based on header height */
+  height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
   max-width: 1600px;
@@ -165,51 +182,45 @@ const getIcon = (type) => {
   font-size: 1.875rem;
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .map-layout {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 320px 1fr;
   flex: 1;
   gap: 1.5rem;
   overflow: hidden;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  min-height: 0;
 }
 
 /* Sidebar */
 .properties-sidebar {
-  border-right: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .sidebar-header {
   padding: 1rem;
   border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  gap: 0.5rem;
 }
 
 .search-input {
-  flex: 1;
+  width: 100%;
   padding: 0.5rem 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 
-.filter-btn {
-  padding: 0.5rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #64748b;
-}
+.search-input:focus { border-color: #2563eb; }
 
 .properties-list {
   flex: 1;
@@ -217,148 +228,128 @@ const getIcon = (type) => {
 }
 
 .property-card {
-  padding: 1rem;
+  padding: 0.875rem 1rem;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .property-card:hover { background: #f8fafc; }
-.property-card.active { background: #eff6ff; border-left: 3px solid #3b82f6; }
+.property-card.active { background: #eff6ff; border-left: 3px solid #2563eb; }
 
 .prop-icon {
-  width: 40px; height: 40px;
+  width: 36px; height: 36px;
   background: #f1f5f9;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #64748b;
+  flex-shrink: 0;
 }
 
 .property-card.active .prop-icon { background: #dbeafe; color: #2563eb; }
 
-.prop-name { font-weight: 600; color: #0f172a; font-size: 0.95rem; }
-.prop-addr { font-size: 0.85rem; color: #64748b; margin: 2px 0; }
-.prop-status { font-size: 0.75rem; font-weight: 500; }
-.prop-status.ok { color: #16a34a; }
-.prop-status.warning { color: #d97706; }
+.prop-name { font-weight: 600; color: #0f172a; font-size: 0.9rem; }
+.prop-addr { font-size: 0.8rem; color: #64748b; margin: 2px 0; }
+.prop-meta { margin-top: 4px; }
 
-/* Map Area */
-.map-container {
-  position: relative;
-  background: #eff6ff;
-  overflow: hidden;
+.occupancy-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
+.occupancy-badge.high { background: #dcfce7; color: #166534; }
+.occupancy-badge.mid  { background: #fef9c3; color: #713f12; }
+.occupancy-badge.low  { background: #fee2e2; color: #991b1b; }
 
-.map-placeholder {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="%23e2e8f0"><path d="M0 0h100v100H0z" fill="white"/><path d="M20 0v100M40 0v100M60 0v100M80 0v100M0 20h100M0 40h100M0 60h100M0 80h100" stroke="%23f1f5f9" stroke-width="2"/></g></svg>');
-}
-
-.map-controls {
-  position: absolute;
-  right: 1rem;
-  bottom: 2rem;
+.empty-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  background: white;
-  padding: 0.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-}
-
-.map-controls button {
-  background: white;
-  border: 1px solid #e2e8f0;
-  width: 32px; height: 32px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #64748b;
-  display: flex; align-items: center; justify-content: center;
-}
-.map-controls button:hover { background: #f8fafc; color: #0f172a; }
-
-/* Pins */
-.map-pin {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  color: #ef4444;
-  cursor: pointer;
-  transition: transform 0.2s;
-  z-index: 10;
-}
-.map-pin .material-icons { font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
-
-.map-pin:hover { transform: translate(-50%, -110%) scale(1.1); color: #dc2626; }
-.map-pin.active { color: #2563eb; transform: translate(-50%, -110%) scale(1.2); z-index: 20; }
-
-.pin-tooltip {
-  position: absolute;
-  top: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1e293b;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-.map-pin:hover .pin-tooltip { opacity: 1; }
-
-/* Detail Overlay */
-.map-detail-card {
-  position: absolute;
-  bottom: 2rem;
-  left: 2rem;
-  width: 300px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-  overflow: hidden;
-  z-index: 30;
-}
-
-.detail-header {
-  padding: 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #94a3b8;
+  gap: 0.5rem;
 }
-.detail-header h3 { margin: 0; font-size: 1rem; }
-.close-btn { background: none; border: none; cursor: pointer; color: #94a3b8; padding: 0; }
+.empty-list .material-icons { font-size: 2rem; }
 
-.detail-img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-}
-
-.detail-body { padding: 1rem; }
-
-.detail-stats {
+.loading-list {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  justify-content: center;
+  padding: 2rem;
 }
-.stat { display: flex; flex-direction: column; }
-.stat .label { font-size: 0.75rem; color: #64748b; }
-.stat .val { font-weight: 600; color: #0f172a; }
 
-.full-width { width: 100%; justify-content: center; }
+.mini-spinner {
+  width: 28px; height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Map */
+.map-container {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  min-height: 0;
+}
+
+.leaflet-map {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+/* Popup */
+.popup-content {
+  min-width: 180px;
+}
+
+.popup-content strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.popup-addr {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0 0 8px;
+}
+
+.popup-stats {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #475569;
+  margin-bottom: 10px;
+}
+
+.popup-btn {
+  width: 100%;
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.popup-btn:hover { background: #1d4ed8; }
 
 @media (max-width: 768px) {
   .map-layout { grid-template-columns: 1fr; }
-  .properties-sidebar { height: 200px; order: 2; }
+  .properties-sidebar { height: 200px; }
 }
 </style>

@@ -289,7 +289,7 @@ watch(() => route.path, (newPath) => {
 <style scoped>
 .sidebar {
   width: 260px;
-  background: #1976D2;
+  background: #2563eb;
   color: white;
   padding: 1.5rem 1rem;
   display: flex;

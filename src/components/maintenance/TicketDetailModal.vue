@@ -50,7 +50,27 @@
           <!-- Main Info -->
           <div class="form-section">
             <h3>Podrobnosti</h3>
-            <AppTextarea 
+            <!-- Property selector for new tickets -->
+            <div v-if="form.id === 'NEW'" class="form-field">
+              <label class="field-label">Nemovitost *</label>
+              <select
+                v-model="form.propertyId"
+                class="property-select"
+                @change="onPropertyChange"
+              >
+                <option value="">— Vyberte nemovitost —</option>
+                <option
+                  v-for="p in props.properties"
+                  :key="p.id"
+                  :value="p.id"
+                >{{ p.name }}</option>
+              </select>
+            </div>
+            <div v-else class="form-field">
+              <label class="field-label">Nemovitost</label>
+              <p class="field-value">{{ form.propertyName || '—' }}</p>
+            </div>
+            <AppTextarea
               v-model="form.description" 
               label="Popis závady"
               :rows="4"
@@ -124,7 +144,10 @@
       </div>
 
       <div class="modal-footer">
-        <div v-if="successMessage" class="success-msg">
+        <div v-if="validationError" class="validation-error">
+          <span class="material-icons">error_outline</span> {{ validationError }}
+        </div>
+        <div v-else-if="successMessage" class="success-msg">
           <span class="material-icons">check_circle</span> {{ successMessage }}
         </div>
         <button class="btn-secondary" @click="$emit('close')">Zavřít</button>
@@ -145,13 +168,18 @@ import AppTextarea from '@/components/common/AppTextarea.vue';
 
 const props = defineProps({
   isOpen: Boolean,
-  ticket: Object
+  ticket: Object,
+  properties: {
+    type: Array,
+    default: () => []
+  }
 });
 
 const emit = defineEmits(['close', 'save']);
 
 const form = ref({});
 const successMessage = ref(null);
+const validationError = ref(null);
 
 watch(() => props.ticket, (newVal) => {
   if (newVal) {
@@ -161,6 +189,11 @@ watch(() => props.ticket, (newVal) => {
 }, { immediate: true });
 
 const fileInput = ref(null);
+
+const onPropertyChange = () => {
+  const selected = props.properties.find(p => p.id === form.value.propertyId);
+  if (selected) form.value.propertyName = selected.name;
+};
 
 const triggerFileUpload = () => {
   fileInput.value.click();
@@ -187,16 +220,24 @@ const removePhoto = (index) => {
 };
 
 const saveChanges = () => {
-  // Validation for new ticket
-  if (form.value.id === 'NEW' && !form.value.subject) {
-    alert('Prosím vyplňte předmět závady.');
+  validationError.value = null;
+
+  if (form.value.id === 'NEW' && !form.value.subject?.trim()) {
+    validationError.value = 'Prosím vyplňte předmět závady.';
+    setTimeout(() => validationError.value = null, 4000);
     return;
   }
-  
-  // Validation for 'done' status
+
+  if (form.value.id === 'NEW' && !form.value.propertyId) {
+    validationError.value = 'Prosím vyberte nemovitost.';
+    setTimeout(() => validationError.value = null, 4000);
+    return;
+  }
+
   if (form.value.status === 'done' && !form.value.realCost) {
-      alert('Pro uzavření tiketu prosím vyplňte skutečnou cenu.');
-      return;
+    validationError.value = 'Pro uzavření tiketu prosím vyplňte skutečnou cenu.';
+    setTimeout(() => validationError.value = null, 4000);
+    return;
   }
 
   emit('save', form.value);
@@ -475,6 +516,52 @@ select {
   gap: 0.5rem;
   font-weight: 500;
   margin-right: auto;
+}
+
+.validation-error {
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  margin-right: auto;
+  font-size: 0.9rem;
+}
+
+.form-field {
+  margin-bottom: 1rem;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.375rem;
+}
+
+.property-select {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.property-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.field-value {
+  margin: 0;
+  color: #1e293b;
+  font-size: 0.9rem;
 }
 
 .btn-secondary {

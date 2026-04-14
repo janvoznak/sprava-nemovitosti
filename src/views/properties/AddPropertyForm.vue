@@ -178,10 +178,24 @@
           </div>
 
           <div class="divider">Přílohy</div>
-          <div class="file-upload-area">
+          <div class="file-upload-area" @click="$refs.fileInput.click()">
+            <input
+              ref="fileInput"
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx"
+              style="display:none"
+              @change="onFilesSelected"
+            />
             <span class="material-icons">cloud_upload</span>
             <p>Nahrajte fotografie nebo list vlastnictví</p>
-            <button class="btn-outline">Vybrat soubory</button>
+            <button class="btn-outline" type="button">Vybrat soubory</button>
+            <ul v-if="uploadedFiles.length" class="file-list">
+              <li v-for="f in uploadedFiles" :key="f">
+                <span class="material-icons" style="font-size:1rem;vertical-align:middle">insert_drive_file</span>
+                {{ f }}
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -214,6 +228,11 @@ const step = ref(1);
 const unitCount = ref(1);
 const stepErrors = ref([false, false, false]);
 const errors = reactive({});
+const uploadedFiles = ref([]);
+
+const onFilesSelected = (event) => {
+  uploadedFiles.value = Array.from(event.target.files).map(f => f.name);
+};
 
 const form = reactive({
   name: '',
@@ -545,6 +564,24 @@ const submit = async () => {
 }
 
 .file-upload-area .material-icons { font-size: 3.5rem; color: #94a3b8; }
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  text-align: left;
+  width: 100%;
+  max-width: 300px;
+}
+
+.file-list li {
+  font-size: 0.85rem;
+  color: #2563eb;
+  padding: 3px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
 /* Actions */
 .form-actions {

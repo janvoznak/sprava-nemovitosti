@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(gh repo:*)",
+      "Bash(git config:*)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(npm i:*)",
+      "Bash(sudo npm:*)",
+      "Bash(npx --yes vercel --version)",
+      "Bash(~/.npm-global/bin/vercel:*)",
+      "Bash(git:*)",
+      "Bash(rsync -a --exclude='.git' /tmp/sprava-nemovitosti-tmp/ /Users/poski/Documents/Claude/sprava-nemovitosti-claude/)",
+      "Bash(cp -r /tmp/sprava-nemovitosti-tmp/.git /Users/poski/Documents/Claude/sprava-nemovitosti-claude/)",
+      "Bash(rm -rf /tmp/sprava-nemovitosti-tmp)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"const m = require\\('/Users/poski/Documents/Claude/sprava-nemovitosti-claude/node_modules/@vue-leaflet/vue-leaflet'\\); console.log\\(Object.keys\\(m\\).slice\\(0,5\\)\\)\")",
+      "Bash(npm uninstall:*)"
+    ]
+  }
+}

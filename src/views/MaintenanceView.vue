@@ -83,9 +83,10 @@
     </div>
 
     <!-- Ticket Detail Modal -->
-    <TicketDetailModal 
+    <TicketDetailModal
       :isOpen="showDetailModal"
       :ticket="selectedTicket"
+      :properties="properties"
       @close="showDetailModal = false"
       @save="handleTicketSave"
     />
@@ -99,10 +100,12 @@ import BreadcrumbNav from '@/components/BreadcrumbNav.vue';
 import MaintenanceKanbanColumn from '@/components/maintenance/MaintenanceKanbanColumn.vue';
 import TicketDetailModal from '@/components/maintenance/TicketDetailModal.vue';
 import { maintenanceService } from '@/services/maintenanceService';
+import { propertyService } from '@/services/propertyService';
 
 const route = useRoute();
 
 const tickets = ref([]);
+const properties = ref([]);
 const loading = ref(true);
 const showDetailModal = ref(false);
 const selectedTicket = ref(null);
@@ -119,7 +122,10 @@ const sortBy = ref('newest');
 const loadTickets = async () => {
   loading.value = true;
   try {
-    tickets.value = await maintenanceService.getTickets();
+    [tickets.value, properties.value] = await Promise.all([
+      maintenanceService.getTickets(),
+      propertyService.getProperties()
+    ]);
   } finally {
     loading.value = false;
   }
@@ -171,7 +177,6 @@ const getFilteredTickets = (status) => {
 };
 
 const createTicket = () => {
-  // Create empty ticket template for new ticket
   selectedTicket.value = {
     id: 'NEW',
     subject: '',

@@ -23,7 +23,7 @@
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
-      <p>Načítání data...</p>
+      <p>Načítání dat...</p>
     </div>
 
     <!-- Dashboard Content -->

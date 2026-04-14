@@ -366,7 +366,7 @@ const totalStats = computed(() => {
       }
       // Parsing rent string "45 000 Kč"
       if (p.rent) {
-         rent += parseInt(p.rent.replace(/\D/g, '')) || 0;
+         rent += typeof p.rent === 'number' ? p.rent : (parseInt(String(p.rent).replace(/\D/g, '')) || 0);
       }
     }
   });
