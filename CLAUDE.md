@@ -13,9 +13,14 @@ SPA prototyp aplikace pro správu pronájmů nemovitostí. Určen k prezentaci k
 - **Routing**: Vue Router 5 (`createWebHistory`)
 - **Styling**: Tailwind CSS v4 + globální styly v `src/assets/main.css` + inline styly v komponentách
 - **Ikony**: Material Icons (Google Fonts CDN) + Lucide Vue Next
-- **Mapa**: Leaflet + vue-leaflet
+- **Mapa**: Leaflet 1.9 + `@vue-leaflet/vue-leaflet` (OSM tiles, bez API klíče)
 - **Dashboard layout**: grid-layout-plus
 - **HTTP klient**: Axios (připraven pro budoucí backend, aktuálně nevyužit)
+
+> **Pozor:** Původní prázdný balíček `vue-leaflet` byl nahrazen `@vue-leaflet/vue-leaflet`.
+> Import: `import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'`
+> CSS: `import 'leaflet/dist/leaflet.css'`
+> Nutný fix icon paths (Vite + Leaflet): viz `src/views/properties/PropertyMapView.vue`
 
 ## Architektura
 
@@ -36,8 +41,8 @@ src/
     dashboard/    # widgety dashboardu
     debtors/      # dlužníci
     documents/    # dokumenty
-    finance/      # finance
-    maintenance/  # údržba
+    finance/      # CashFlowChart, ExpensesTable, ForecastSection, ...
+    maintenance/  # MaintenanceCard, TicketDetailModal, ...
     mobile/       # mobilní FAB
     property/     # nemovitosti a jednotky
     tenants/      # nájemci
@@ -69,6 +74,15 @@ Ovládáno přes env proměnnou `VITE_USE_MOCK`:
 
 Při přechodu na real backend: změnit `.env.production` na `false` a nastavit `VITE_API_BASE_URL`.
 
+### Finance dashboard (`src/views/finance/FinanceDashboardView.vue`)
+Načítá data z `financeService` + `debtService` přes `Promise.all` v `onMounted`. KPI jsou vypočítány z reálných mock dat. Graf využívá existující `CashFlowChart` komponent. Struktura nákladů je počítána z kategorií výdajů (`energy`, `repairs`, `management`).
+
+### Mapa nemovitostí (`src/views/properties/PropertyMapView.vue`)
+Plnohodnotná Leaflet mapa (OSM tiles). Nemovitosti mají GPS souřadnice v `src/mock/properties.js` (pole `lat`, `lng`). Klik na nemovitost v levém panelu spustí `map.flyTo()`. Popup zobrazuje název, adresu, obsazenost a tlačítko → detail. Vyhledávání filtruje seznam i vizuálně.
+
+### Maintenance tikety (`src/components/maintenance/TicketDetailModal.vue`)
+Přijímá prop `properties: Array` — seznam nemovitostí pro dropdown při tvorbě nového tiketu. Validace je inline (ne `alert()`), zobrazena jako červená zpráva v patičce modalu. Validuje: předmět, vybraná nemovitost, skutečná cena při stavu „hotovo".
+
 ### Adresní autocomplete
 `useRuianAutocomplete` composable volá **Nominatim API** (OpenStreetMap) pro autocomplete českých adres — bez API klíče. Minimální délka dotazu: 3 znaky.
 
@@ -89,14 +103,15 @@ Univerzální view pro jednoduché tabulkové stránky (Dodavatelé, Historie op
 - **`src/assets/main.css`** — globální utility (`.loading-spinner`, `.error-banner`, animace)
 - **Material Icons** — používat konzistentně pro navigaci a akce (`<span class="material-icons">`)
 - **Lucide Vue Next** — používat pro specifické ikonky v komponentách (import z `lucide-vue-next`)
-- Barva primární: `#2563eb` (blue-600), pozadí: `#f8fafc`
-- Font: Inter (Google Fonts, preconnect v `index.html`)
+- **Primární barva: `#2563eb`** (blue-600) — platí pro sidebar, tlačítka, akcenty
+- **Save/confirm barva: `#00C853`** (zelená) — záměrně odlišná od navigační modré
+- Pozadí: `#f8fafc`, font: Inter (Google Fonts, preconnect v `index.html`)
 
 ## Co neměnit bez výslovného souhlasu
 - Mock data v `src/mock/` — slouží pro prezentaci klientovi, jsou záměrně česká a realistická
+- GPS souřadnice v `src/mock/properties.js` (`lat`/`lng`) — ručně ověřené hodnoty
 - `VITE_USE_MOCK=true` v `.env.production` — dokud není backend
 - `GenericListView` pattern v routeru — záměrné zjednodušení pro prototyp
-- Mock kód `1234` pro SMS ověření (pokud existuje v mock datech) — testovací hodnota
 
 ## Env proměnné
 ```
