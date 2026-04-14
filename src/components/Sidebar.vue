@@ -290,7 +290,12 @@ watch(() => route.path, (newPath) => {
 .sidebar {
   width: 260px;
   background: #2563eb;
-  color: white;
+  color: #FFFFFF;
+  font-family: "Open Sans", sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
   padding: 1.5rem 1rem;
   display: flex;
   flex-direction: column;

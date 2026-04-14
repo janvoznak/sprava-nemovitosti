@@ -26,7 +26,7 @@ import TopHeader from '@/components/TopHeader.vue';
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Open Sans', sans-serif;
   background: #f8fafc;
 }
 
