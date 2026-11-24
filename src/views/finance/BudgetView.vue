@@ -9,14 +9,14 @@
     <div class="header-section">
       <div>
         <h1 class="page-title">Rozpočet a Plánování</h1>
-        <p class="subtitle">Přehled čerpání rozpočtu pro R. 2025</p>
+        <p class="subtitle">Přehled čerpání rozpočtu pro rok {{ year }}</p>
       </div>
       <div class="controls">
        <div class="toggle-group">
-          <button class="toggle-btn active">Nemovitosti</button>
-          <button class="toggle-btn">Kategorie</button>
+          <button class="toggle-btn" :class="{ active: mode === 'properties' }" @click="mode = 'properties'">Nemovitosti</button>
+          <button class="toggle-btn" :class="{ active: mode === 'categories' }" @click="mode = 'categories'">Kategorie</button>
         </div>
-        <button class="btn-primary">
+        <button class="btn-primary" @click="showInfo('Úprava rozpočtového plánu není v prototypu dostupná')">
           <span class="material-icons">edit</span> Upravit plán
         </button>
       </div>
@@ -26,18 +26,18 @@
     <div class="kpi-grid">
       <div class="kpi-card">
         <span class="kpi-label">Celkový rozpočet (YTD)</span>
-        <span class="kpi-value">2 450 000 Kč</span>
+        <span class="kpi-value">{{ formatCurrency(totalBudget) }}</span>
         <div class="progress-container">
-          <div class="progress-bar" style="width: 65%"></div>
+          <div class="progress-bar" :style="{ width: spentPercent + '%' }"></div>
         </div>
-        <span class="kpi-sub">Vyčerpáno 65% z ročního plánu</span>
+        <span class="kpi-sub">Vyčerpáno {{ spentPercent }} % z ročního plánu</span>
       </div>
       
       <div class="kpi-card">
         <span class="kpi-label">Očekávané příjmy</span>
-        <span class="kpi-value positive">8 120 000 Kč</span>
+        <span class="kpi-value positive">{{ formatCurrency(expectedIncome) }}</span>
         <span class="trend up">
-          <span class="material-icons">trending_up</span> +5.2% vs 2024
+          <span class="material-icons">trending_up</span> +5.2% vs {{ year - 1 }}
         </span>
       </div>
 
@@ -51,16 +51,16 @@
     <!-- Budget Lines -->
     <div class="content-card">
       <div class="card-header">
-        <h3>Čerpání rozpočtu dle nemovitostí</h3>
+        <h3>{{ mode === 'properties' ? 'Čerpání rozpočtu dle nemovitostí' : 'Čerpání rozpočtu dle kategorií' }}</h3>
       </div>
       
       <div class="budget-list">
-        <div v-for="item in budgetItems" :key="item.id" class="budget-item">
+        <div v-for="item in visibleItems" :key="item.id" class="budget-item">
           <div class="item-info">
             <div class="item-icon">{{ item.icon }}</div>
             <div class="item-details">
               <span class="item-name">{{ item.name }}</span>
-              <span class="item-sub">{{ item.units }} jednotek</span>
+              <span class="item-sub">{{ item.sub }}</span>
             </div>
           </div>
           
@@ -88,15 +88,60 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { propertyService } from '@/services/propertyService';
+import { useNotification } from '@/composables/useNotification';
 import BreadcrumbNav from '@/components/BreadcrumbNav.vue';
 
-const budgetItems = ref([
-  { id: 1, name: 'Bytový dům Na Kopci', units: 12, spent: 450000, budget: 600000, percentage: 75, icon: 'apartment' },
-  { id: 2, name: 'Villa Nová', units: 3, spent: 120000, budget: 400000, percentage: 30, icon: 'home' },
-  { id: 3, name: 'Komerční centrum A2', units: 5, spent: 850000, budget: 900000, percentage: 94, icon: 'store' },
-  { id: 4, name: 'Apartmány Slunečná', units: 8, spent: 210000, budget: 500000, percentage: 42, icon: 'holiday_village' },
-]);
+const year = new Date().getFullYear();
+const mode = ref('properties');
+const { showInfo } = useNotification();
+
+const properties = ref([]);
+onMounted(async () => {
+  properties.value = await propertyService.getProperties();
+});
+
+const unitsLabel = (n) => `${n} ${n === 1 ? 'jednotka' : n >= 2 && n <= 4 ? 'jednotky' : 'jednotek'}`;
+const pctFor = (i) => [75, 30, 94, 42, 58, 66, 81, 23][i % 8];
+
+// Property budget = yearly service + repair budget; spent is a deterministic share of it
+const propertyItems = computed(() =>
+  properties.value.slice(0, 6).map((p, i) => {
+    const budget = Math.round(((p.econ_services || 0) + (p.econ_repairs || 0)) * 12 / 1000) * 1000;
+    const percentage = pctFor(i);
+    return {
+      id: p.id,
+      name: p.name,
+      sub: unitsLabel((p.units || []).length),
+      budget,
+      spent: Math.round(budget * percentage / 100),
+      percentage,
+      icon: ['apartment', 'home', 'store', 'holiday_village'][i % 4]
+    };
+  })
+);
+
+const categoryItems = computed(() => {
+  const total = propertyItems.value.reduce((sum, i) => sum + i.budget, 0);
+  const cats = [
+    { name: 'Energie a služby', icon: 'bolt', share: 0.4, percentage: 68 },
+    { name: 'Opravy a údržba', icon: 'build', share: 0.3, percentage: 85 },
+    { name: 'Správa a administrativa', icon: 'badge', share: 0.2, percentage: 47 },
+    { name: 'Pojištění a daně', icon: 'shield', share: 0.1, percentage: 92 }
+  ];
+  return cats.map((c, i) => {
+    const budget = Math.round(total * c.share / 1000) * 1000;
+    return { id: i, name: c.name, sub: `${Math.round(c.share * 100)} % rozpočtu`, budget, spent: Math.round(budget * c.percentage / 100), percentage: c.percentage, icon: c.icon };
+  });
+});
+
+const totalBudget = computed(() => propertyItems.value.reduce((sum, i) => sum + i.budget, 0));
+const totalSpent = computed(() => propertyItems.value.reduce((sum, i) => sum + i.spent, 0));
+const spentPercent = computed(() => (totalBudget.value ? Math.round((totalSpent.value / totalBudget.value) * 100) : 0));
+const expectedIncome = computed(() => properties.value.reduce((sum, p) => sum + (p.econ_rent || 0), 0) * 12);
+
+const visibleItems = computed(() => (mode.value === 'properties' ? propertyItems.value : categoryItems.value));
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 }).format(value);

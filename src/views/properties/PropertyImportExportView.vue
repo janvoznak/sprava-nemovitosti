@@ -26,7 +26,7 @@
               <strong>Export pro účetní</strong>
               <span>CSV formát, přehled plateb a faktur</span>
             </div>
-            <button class="btn-outline">
+            <button class="btn-outline" @click="exportCsv">
               <span class="material-icons">file_download</span> Stáhnout
             </button>
           </div>
@@ -36,7 +36,7 @@
               <strong>Export pro portály</strong>
               <span>XML feed (Sreality, Reality.cz)</span>
             </div>
-            <button class="btn-outline">
+            <button class="btn-outline" @click="generateFeed">
               <span class="material-icons">rss_feed</span> Generovat
             </button>
           </div>
@@ -46,7 +46,7 @@
               <strong>Kompletní záloha</strong>
               <span>ZIP archiv všech dokumentů</span>
             </div>
-            <button class="btn-outline">
+            <button class="btn-outline" @click="exportBackup">
               <span class="material-icons">archive</span> Zálohovat
             </button>
           </div>
@@ -71,7 +71,8 @@
           <span class="material-icons upload-icon">upload_file</span>
           <p class="drop-text">Přetáhněte soubor sem</p>
           <p class="drop-sub">nebo klikněte pro výběr (CSV, XLS)</p>
-          <button class="btn-primary">Vybrat soubor</button>
+          <input ref="fileInput" type="file" accept=".csv,.xls,.xlsx" hidden @change="onFileChosen">
+          <button class="btn-primary" @click="fileInput && fileInput.click()">Vybrat soubor</button>
         </div>
       </div>
     </div>
@@ -115,7 +116,45 @@ import { ref } from 'vue';
 import BreadcrumbNav from '@/components/BreadcrumbNav.vue';
 import { useNotification } from '@/composables/useNotification';
 
-const { showSuccess } = useNotification();
+import { propertyService } from '@/services/propertyService';
+
+const { showSuccess, showInfo } = useNotification();
+const fileInput = ref(null);
+
+const download = (filename, content, mime) => {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const exportCsv = async () => {
+  const props = await propertyService.getProperties();
+  const head = ['ID', 'Název', 'Město', 'PSČ', 'Typ', 'Stav', 'Obsazenost %', 'Nájemné (Kč)'];
+  const rows = props.map(p => [p.id, p.name, p.city, p.zipCode, p.type, p.status, p.occupancyPercentage, p.econ_rent]);
+  const csv = [head, ...rows].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+  download('nemovitosti.csv', '\ufeff' + csv, 'text/csv;charset=utf-8');
+  showSuccess(`Export dokončen (${props.length} nemovitostí)`);
+};
+
+const exportBackup = async () => {
+  const props = await propertyService.getProperties();
+  download('zaloha-nemovitosti.json', JSON.stringify(props, null, 2), 'application/json');
+  showSuccess('Záloha byla vytvořena');
+};
+
+const generateFeed = () => {
+  showInfo('Feed pro realitní portály byl vygenerován (simulace)');
+};
+
+const onFileChosen = (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (file) showSuccess(`Soubor „${file.name}" byl úspěšně nahrán (simulace)`);
+  e.target.value = '';
+};
 
 const handleDrop = () => {
   showSuccess('Soubor byl úspěšně nahrán (simulace)');

@@ -6,9 +6,12 @@ import { ref } from 'vue'
  * 
  * @returns {Object} Notification state and methods
  */
+// Shared (module-level) state: one global toast in App.vue renders messages from every view
+const notification = ref(null)
+const notificationType = ref('success') // 'success', 'error', 'warning', 'info'
+let hideTimer = null
+
 export function useNotification() {
-    const notification = ref(null)
-    const notificationType = ref('success') // 'success', 'error', 'warning', 'info'
 
     /**
      * Show a notification message
@@ -20,7 +23,8 @@ export function useNotification() {
         notification.value = message
         notificationType.value = type
 
-        setTimeout(() => {
+        clearTimeout(hideTimer)
+        hideTimer = setTimeout(() => {
             notification.value = null
         }, duration)
     }

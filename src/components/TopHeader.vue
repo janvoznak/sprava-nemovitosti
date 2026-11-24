@@ -1,5 +1,8 @@
 <template>
   <header class="top-header">
+    <button class="menu-toggle" aria-label="Menu" @click="toggleNav">
+      <span class="material-icons">menu</span>
+    </button>
     <div class="search-container" v-click-outside="closeSearch">
       <span class="material-icons search-icon">search</span>
       <input 
@@ -98,6 +101,8 @@
 </template>
 
 <script setup>
+import { useMobileNav } from '@/composables/useMobileNav';
+const { toggleNav } = useMobileNav();
 import { ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { searchService } from '@/services/searchService';
@@ -507,5 +512,23 @@ const vClickOutside = {
 
 .user-profile-header.active .expand-icon {
   transform: rotate(180deg);
+}
+
+.menu-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.25rem;
+  margin-right: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .top-header { padding: 0 0.75rem; gap: 0.5rem; }
+  .menu-toggle { display: inline-flex; }
+  .header-right { gap: 0.25rem; flex-shrink: 0; }
+  .search-container { flex: 1; width: auto; min-width: 0; max-width: none; }
+  .search-input { width: 100%; min-width: 0; }
 }
 </style>

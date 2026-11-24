@@ -1,5 +1,6 @@
 <template>
-  <aside class="sidebar">
+  <div v-if="isNavOpen" class="sidebar-backdrop" @click="closeNav"></div>
+  <aside class="sidebar" :class="{ 'sidebar-open': isNavOpen }">
     <div class="sidebar-header">
       <router-link to="/" class="logo-link">
         <img src="@/assets/logo.svg" alt="Poski REAL" class="logo-img">
@@ -229,8 +230,13 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useMobileNav } from '@/composables/useMobileNav';
 
 const route = useRoute();
+const { isNavOpen, closeNav } = useMobileNav();
+
+// Close the mobile drawer after navigating
+watch(() => route.fullPath, () => closeNav());
 
 // Track which menus are expanded
 const expandedMenus = ref({
@@ -440,5 +446,31 @@ watch(() => route.path, (newPath) => {
 .submenu-leave-from {
   opacity: 1;
   max-height: 300px;
+}
+
+/* Mobile: off-canvas drawer */
+.sidebar-backdrop { display: none; }
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    min-height: 0;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 200;
+  }
+  .sidebar.sidebar-open { transform: translateX(0); }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 190;
+  }
 }
 </style>

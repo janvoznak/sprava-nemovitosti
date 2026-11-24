@@ -101,6 +101,9 @@ import MaintenanceKanbanColumn from '@/components/maintenance/MaintenanceKanbanC
 import TicketDetailModal from '@/components/maintenance/TicketDetailModal.vue';
 import { maintenanceService } from '@/services/maintenanceService';
 import { propertyService } from '@/services/propertyService';
+import { useNotification } from '@/composables/useNotification';
+
+const { showError } = useNotification();
 
 const route = useRoute();
 
@@ -204,7 +207,7 @@ const handleTicketSave = async (updatedTicket) => {
   if (updatedTicket.id === 'NEW') {
     // Creating new ticket
     if (!updatedTicket.subject) {
-      alert('Prosím vyplňte předmět závady.');
+      showError('Prosím vyplňte předmět závady.');
       return;
     }
     await maintenanceService.createTicket({

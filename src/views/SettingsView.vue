@@ -202,7 +202,7 @@ const handleExport = () => {
 
 const handleDeleteAccount = () => {
   if (confirm('Opravdu chcete smazat svůj účet? Tato akce je nevratná.')) {
-    alert('Funkce není v demu dostupná.');
+    showInfo('Funkce není v demu dostupná.');
   }
 };
 </script>

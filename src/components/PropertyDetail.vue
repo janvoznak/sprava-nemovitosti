@@ -222,7 +222,14 @@
               </div>
               
               <div class="map-container">
-                <div class="map-placeholder">
+                <iframe
+                  v-if="form.latitude && form.longitude"
+                  class="map-embed"
+                  title="Mapa nemovitosti"
+                  loading="lazy"
+                  :src="mapEmbedUrl"
+                ></iframe>
+                <div v-else class="map-placeholder">
                   <span class="material-icons map-icon">location_on</span>
                   <p class="map-text">Mapa bude zobrazena po zadání adresy</p>
                   <p class="map-coords" v-if="form.latitude && form.longitude">
@@ -835,6 +842,13 @@ const scoringData = computed(() => {
   return calculatePropertyScore(form.value);
 });
 
+const mapEmbedUrl = computed(() => {
+  const lat = Number(form.value.latitude);
+  const lng = Number(form.value.longitude);
+  const d = 0.004;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d},${lat - d},${lng + d},${lat + d}&layer=mapnik&marker=${lat},${lng}`;
+});
+
 const healthScore = computed(() => scoringData.value.score);
 const healthStatus = computed(() => scoringData.value.status);
 const scoreBreakdown = computed(() => scoringData.value.breakdown);
@@ -1177,6 +1191,17 @@ onMounted(async () => {
   const data = await propertyService.getPropertyById(props.propertyId);
   if (data) {
     Object.assign(form.value, data);
+    // Map mock/list field names onto the detail form
+    if (!form.value.internalRef) form.value.internalRef = data.id;
+    if (!form.value.latitude && data.lat) form.value.latitude = data.lat;
+    if (!form.value.longitude && data.lng) form.value.longitude = data.lng;
+    if (!form.value.listingDate && data.validFrom) {
+      const [d, m, y] = String(data.validFrom).split('.');
+      if (d && m && y) form.value.listingDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    if (!addressSearchQuery.value && data.street) {
+      addressSearchQuery.value = `${data.street} ${data.houseNumber || ''}, ${data.city || ''}`.replace(/\s+,/, ',').trim();
+    }
     // Ensure lists are initialized
     if (!form.value.revisions) form.value.revisions = [];
     if (!form.value.meters) form.value.meters = [];
@@ -1213,6 +1238,8 @@ onMounted(async () => {
   align-items: center;
   gap: 1.5rem;
 }
+
+.map-embed { width: 100%; height: 100%; min-height: 320px; border: 0; border-radius: 8px; }
 
 .health-badge-mini {
   width: 44px;
