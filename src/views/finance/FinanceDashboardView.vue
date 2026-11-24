@@ -9,8 +9,8 @@
       <h1 class="page-title">Finanční přehled</h1>
       <div class="controls">
         <select class="period-select">
-          <option>Tento rok (2025)</option>
-          <option>Minulý rok (2024)</option>
+          <option>Tento rok ({{ new Date().getFullYear() }})</option>
+          <option>Minulý rok ({{ new Date().getFullYear() - 1 }})</option>
         </select>
         <button class="btn-primary">
           <span class="material-icons">download</span> Report

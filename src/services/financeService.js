@@ -172,7 +172,7 @@ export const financeService = {
             if (API_CONFIG.useMock) {
                 return new Promise((resolve) => {
                     setTimeout(() => {
-                        const today = new Date('2026-02-01') // Mock current date
+                        const today = new Date()
                         const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
                         const nextMonthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0)
 
@@ -193,7 +193,7 @@ export const financeService = {
                             estimatedExpenses: Math.round(avgMonthlyExpenses),
                             netForecast: expectedIncomes.reduce((sum, inc) => sum + inc.amount, 0) - Math.round(avgMonthlyExpenses),
                             upcomingRevisions: [
-                                { property: 'Václavské náměstí 28', type: 'Revize plynu', date: '2026-02-15', estimatedCost: 5200 }
+                                { property: 'Václavské náměstí 28', type: 'Revize plynu', date: new Date(today.getFullYear(), today.getMonth() + 1, 15).toISOString().split('T')[0], estimatedCost: 5200 }
                             ]
                         }
 

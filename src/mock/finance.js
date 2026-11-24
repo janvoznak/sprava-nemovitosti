@@ -1,4 +1,16 @@
 // Mock financial data - incomes and expenses
+// All dates are relative to "today" so the demo never goes stale.
+
+// Deterministic pseudo-random (stable between reloads)
+let _seed = 7;
+const rnd = () => { _seed = (_seed * 9301 + 49297) % 233280; return _seed / 233280; };
+
+// Shift ISO dates written for the original anchor (2025-06-30) to the present
+const ANCHOR = new Date('2025-06-30').getTime();
+const shiftIso = (iso) => {
+    const d = new Date(new Date(iso).getTime() + (Date.now() - ANCHOR));
+    return d.toISOString().split('T')[0];
+};
 
 const generateIncomes = () => {
     const tenants = [
@@ -16,16 +28,14 @@ const generateIncomes = () => {
     let id = 1;
 
     // Generate incomes for past 6 months
-    const months = [
-        { month: 1, year: 2025, name: 'Leden 2025' },
-        { month: 2, year: 2025, name: 'Únor 2025' },
-        { month: 3, year: 2025, name: 'Březen 2025' },
-        { month: 4, year: 2025, name: 'Duben 2025' },
-        { month: 5, year: 2025, name: 'Květen 2025' },
-        { month: 6, year: 2025, name: 'Červen 2025' }
-    ];
+    const CZ_MONTHS = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, k) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - k), 1);
+        return { month: d.getMonth() + 1, year: d.getFullYear(), name: `${CZ_MONTHS[d.getMonth()]} ${d.getFullYear()}`, isLatest: k === 5, isPrevLatest: k === 4 };
+    });
 
-    months.forEach(({ month, year, name }) => {
+    months.forEach(({ month, year, name, isLatest, isPrevLatest }) => {
         tenants.forEach((tenant, idx) => {
             const dueDate = new Date(year, month - 1, 15); // Splatnost 15. v měsíci
 
@@ -34,24 +44,24 @@ const generateIncomes = () => {
             let status = 'unpaid';
 
             // Most recent month (June 2025) - some unpaid, some late
-            if (month === 6) {
+            if (isLatest) {
                 const scenario = idx % 3;
                 if (scenario === 0) {
                     // Paid on time
-                    paidDate = new Date(year, month - 1, 12 + Math.floor(Math.random() * 3));
+                    paidDate = new Date(year, month - 1, 12 + Math.floor(rnd() * 3));
                     status = 'paid';
                 } else if (scenario === 1) {
                     // Paid late
-                    paidDate = new Date(year, month - 1, 18 + Math.floor(Math.random() * 5));
+                    paidDate = new Date(year, month - 1, 18 + Math.floor(rnd() * 5));
                     status = 'paid';
                 } else {
                     // Not paid yet
-                    const today = new Date('2026-02-01');
+                    const today = new Date();
                     status = dueDate < today ? 'late' : 'unpaid';
                 }
             } else {
                 // Past months - mostly paid
-                const random = Math.random();
+                const random = rnd();
 
                 // FORCE: Jan Novák (P0001) is a critical debtor (didn't pay last 6 months)
                 if (tenant.propertyId === 'P0001') {
@@ -59,12 +69,12 @@ const generateIncomes = () => {
                     paidDate = null;
                 }
                 // FORCE: Petr Dvořák (P0003) is a medium debtor (didn't pay last 2 months)
-                else if (tenant.propertyId === 'P0003' && (month === 6 || month === 5)) {
+                else if (tenant.propertyId === 'P0003' && (isLatest || isPrevLatest)) {
                     status = 'unpaid';
                     paidDate = null;
                 }
                 else if (random > 0.15) { // 85% paid
-                    const daysDelay = Math.random() < 0.7 ? Math.floor(Math.random() * 3) : Math.floor(Math.random() * 10) + 3;
+                    const daysDelay = rnd() < 0.7 ? Math.floor(rnd() * 3) : Math.floor(rnd() * 10) + 3;
                     paidDate = new Date(year, month - 1, 15 + daysDelay);
                     status = 'paid';
                 } else {
@@ -109,7 +119,7 @@ const generateExpenses = () => {
             category: 'repair',
             description: 'Oprava kotle - vchod B',
             amount: 15000,
-            date: '2025-01-15',
+            date: shiftIso('2025-01-15'),
             status: 'paid',
             supplier: 'Technik s.r.o.'
         },
@@ -120,7 +130,7 @@ const generateExpenses = () => {
             category: 'repair',
             description: 'Výměna zámku vchodových dveří',
             amount: 8500,
-            date: '2025-02-20',
+            date: shiftIso('2025-02-20'),
             status: 'paid',
             supplier: 'Klíčnictví Rychle'
         },
@@ -131,7 +141,7 @@ const generateExpenses = () => {
             category: 'repair',
             description: 'Oprava protékajícího ventilu',
             amount: 3200,
-            date: '2025-03-10',
+            date: shiftIso('2025-03-10'),
             status: 'paid',
             supplier: 'Instalatér Praha'
         },
@@ -142,7 +152,7 @@ const generateExpenses = () => {
             category: 'repair',
             description: 'Malování společných prostor',
             amount: 22000,
-            date: '2025-04-05',
+            date: shiftIso('2025-04-05'),
             status: 'paid',
             supplier: 'Malířství Barva'
         },
@@ -153,7 +163,7 @@ const generateExpenses = () => {
             category: 'repair',
             description: 'Oprava střechy - zatékání',
             amount: 45000,
-            date: '2025-05-12',
+            date: shiftIso('2025-05-12'),
             status: 'paid',
             supplier: 'Střechy expert s.r.o.'
         },
@@ -166,7 +176,7 @@ const generateExpenses = () => {
             category: 'revision',
             description: 'Revize elektroinstalace',
             amount: 4500,
-            date: '2025-01-08',
+            date: shiftIso('2025-01-08'),
             status: 'paid',
             supplier: 'Ing. Karel Elektrikář'
         },
@@ -177,7 +187,7 @@ const generateExpenses = () => {
             category: 'revision',
             description: 'Revize plynového kotle',
             amount: 3800,
-            date: '2025-02-15',
+            date: shiftIso('2025-02-15'),
             status: 'paid',
             supplier: 'Jan Horák - revize'
         },
@@ -188,7 +198,7 @@ const generateExpenses = () => {
             category: 'revision',
             description: 'Revize komínů',
             amount: 2900,
-            date: '2025-03-22',
+            date: shiftIso('2025-03-22'),
             status: 'paid',
             supplier: 'Kominík Brno'
         },
@@ -199,7 +209,7 @@ const generateExpenses = () => {
             category: 'revision',
             description: 'Revize plynového vedení',
             amount: 5200,
-            date: '2025-06-10',
+            date: shiftIso('2025-06-10'),
             status: 'unpaid',
             supplier: 'Plyn servis s.r.o.'
         },
@@ -212,7 +222,7 @@ const generateExpenses = () => {
             category: 'energy',
             description: 'Elektřina - společné prostory',
             amount: 3200,
-            date: '2025-01-30',
+            date: shiftIso('2025-01-30'),
             status: 'paid',
             supplier: 'ČEZ'
         },
@@ -223,7 +233,7 @@ const generateExpenses = () => {
             category: 'energy',
             description: 'Elektřina - společné prostory',
             amount: 2900,
-            date: '2025-02-28',
+            date: shiftIso('2025-02-28'),
             status: 'paid',
             supplier: 'ČEZ'
         },
@@ -234,7 +244,7 @@ const generateExpenses = () => {
             category: 'energy',
             description: 'Plyn - vytápění',
             amount: 8500,
-            date: '2025-03-15',
+            date: shiftIso('2025-03-15'),
             status: 'paid',
             supplier: 'Innogy'
         },
@@ -245,7 +255,7 @@ const generateExpenses = () => {
             category: 'energy',
             description: 'Voda - společné prostory',
             amount: 1800,
-            date: '2025-04-20',
+            date: shiftIso('2025-04-20'),
             status: 'paid',
             supplier: 'Pražské vodovody'
         },
@@ -258,7 +268,7 @@ const generateExpenses = () => {
             category: 'tax',
             description: 'Daň z nemovitosti 2025',
             amount: 12000,
-            date: '2025-05-31',
+            date: shiftIso('2025-05-31'),
             status: 'paid',
             supplier: 'Finanční úřad Praha 1'
         },
@@ -269,7 +279,7 @@ const generateExpenses = () => {
             category: 'tax',
             description: 'Daň z nemovitosti 2025',
             amount: 9500,
-            date: '2025-05-31',
+            date: shiftIso('2025-05-31'),
             status: 'paid',
             supplier: 'Finanční úřad Praha 1'
         },
@@ -280,7 +290,7 @@ const generateExpenses = () => {
             category: 'tax',
             description: 'Daň z nemovitosti 2025',
             amount: 11200,
-            date: '2025-05-31',
+            date: shiftIso('2025-05-31'),
             status: 'paid',
             supplier: 'Finanční úřad Praha 3'
         },
@@ -293,7 +303,7 @@ const generateExpenses = () => {
             category: 'insurance',
             description: 'Pojištění nemovitosti - roční',
             amount: 18000,
-            date: '2025-01-10',
+            date: shiftIso('2025-01-10'),
             status: 'paid',
             supplier: 'Kooperativa'
         },
@@ -304,7 +314,7 @@ const generateExpenses = () => {
             category: 'insurance',
             description: 'Pojištění nemovitosti - roční',
             amount: 15500,
-            date: '2025-01-15',
+            date: shiftIso('2025-01-15'),
             status: 'paid',
             supplier: 'Allianz'
         },
@@ -315,7 +325,7 @@ const generateExpenses = () => {
             category: 'insurance',
             description: 'Pojištění nemovitosti - roční',
             amount: 16200,
-            date: '2025-01-20',
+            date: shiftIso('2025-01-20'),
             status: 'paid',
             supplier: 'ČSOB Pojišťovna'
         }
