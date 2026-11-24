@@ -1,3 +1,8 @@
+// Date helpers — contract/revision dates are relative to "today" so the demo never goes stale
+const fmtDate = (d) => `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+const addDays = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return d; };
+const addYears = (d, years) => { const r = new Date(d); r.setFullYear(r.getFullYear() + years); return r; };
+
 // Helper function to generate mock data
 const generateMockData = () => {
     const czechStreets = [
@@ -124,14 +129,19 @@ const generateMockData = () => {
                 const livingArea = Math.floor(totalArea * 0.9);
                 const serviceCharges = Math.floor(baseRent * 0.2);
 
+                // Deterministic contract end: spread between 15 and ~345 days ahead
+                const contractEndDate = addDays(15 + ((i * 37 + ui * 53) % 330));
+                const contractStartDate = addYears(contractEndDate, -1);
+                contractStartDate.setDate(contractStartDate.getDate() + 1);
+
                 return {
                     // Existing basic info
                     id: `U${String(i + 1).padStart(2, '0')}${String(ui + 1).padStart(2, '0')}`,
                     label: `Byt č. ${String(ui + 1).padStart(3, '0')} (${disposition})`,
                     area: `${totalArea} m²`,
-                    validity: isOccupied ? `od: 1.1.2024 do: 31.12.2024` : '-',
-                    contractStart: isOccupied ? `01.01.2024` : null,
-                    contractEnd: isOccupied ? '31.12.2024' : null,
+                    validity: isOccupied ? `od: ${fmtDate(contractStartDate)} do: ${fmtDate(contractEndDate)}` : '-',
+                    contractStart: isOccupied ? fmtDate(contractStartDate) : null,
+                    contractEnd: isOccupied ? fmtDate(contractEndDate) : null,
                     tenant: tenantName,
                     email: isOccupied ? `${tenantName.toLowerCase().replace(' ', '.')}@email.cz` : '-',
                     phone: isOccupied ? `+420 608 ${100 + i}${200 + ui}` : '-',
@@ -249,22 +259,22 @@ const generateMockData = () => {
                 {
                     type: 'Elektřina',
                     date: `15.${Math.floor(Math.random() * 12) + 1}.2024`,
-                    validUntil: '15.10.2026',
+                    validUntil: fmtDate(addDays(200 + ((i * 41) % 500))),
                     status: 'Platná',
                     technician: 'Ing. Karel Elektrikář',
                     phone: '+420 608 123 456',
                     description: 'Pravidelná revize elektroinstalace',
-                    daysLeft: Math.floor(Math.random() * 500) + 200
+                    daysLeft: 200 + ((i * 41) % 500)
                 },
                 {
                     type: 'Plyn',
                     date: `01.${Math.floor(Math.random() * 12) + 1}.2024`,
-                    validUntil: '01.09.2025',
-                    status: Math.random() > 0.8 ? 'Expiruje' : 'Platná',
+                    validUntil: fmtDate(addDays(50 + ((i * 29) % 300))),
+                    status: (i % 5 === 0) ? 'Expiruje' : 'Platná',
                     technician: 'Jan Horák',
                     phone: '+420 777 555 444',
                     description: 'Revize plynového kotle',
-                    daysLeft: Math.floor(Math.random() * 300) + 50
+                    daysLeft: 50 + ((i * 29) % 300)
                 }
             ],
 

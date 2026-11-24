@@ -1,6 +1,9 @@
 <script setup>
 import Sidebar from '@/components/Sidebar.vue';
 import TopHeader from '@/components/TopHeader.vue';
+import { useNotification } from '@/composables/useNotification';
+
+const { notification, notificationType } = useNotification();
 </script>
 
 <template>
@@ -13,6 +16,12 @@ import TopHeader from '@/components/TopHeader.vue';
         <router-view />
       </div>
     </main>
+
+    <transition name="app-toast">
+      <div v-if="notification" class="app-toast" :class="notificationType" role="status">
+        {{ notification }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -50,6 +59,34 @@ body {
   padding: 1.5rem 2rem; /* Reduced top/bottom padding slightly */
   background: #f8fafc;
 }
+
+@media (max-width: 900px) {
+  .content { padding: 1rem; }
+  .main-content-wrapper { width: 100%; min-width: 0; }
+}
+
+/* Global toast */
+.app-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  max-width: calc(100vw - 2rem);
+  background: #0f172a;
+}
+.app-toast.success { background: #00C853; }
+.app-toast.error { background: #dc2626; }
+.app-toast.warning { background: #d97706; }
+.app-toast.info { background: #2563eb; }
+.app-toast-enter-active, .app-toast-leave-active { transition: opacity 0.2s, transform 0.2s; }
+.app-toast-enter-from, .app-toast-leave-to { opacity: 0; transform: translate(-50%, 10px); }
 
 /* Error Banner - Global */
 .error-banner {

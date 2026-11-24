@@ -28,7 +28,7 @@
         <span>Přidat nemovitost</span>
       </button>
 
-      <button class="action-btn secondary" @click="$router.push('/finance/invoices/new')">
+      <button class="action-btn secondary" @click="$router.push('/finance/invoices')">
          <div class="icon-circle">
           <span class="material-icons">receipt_long</span>
         </div>

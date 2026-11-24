@@ -6,7 +6,9 @@ SPA prototyp aplikace pro správu pronájmů nemovitostí. Určen k prezentaci k
 - **Projektová složka**: `/Users/poski/Documents/Claude/sprava-nemovitosti-claude`
 - Nasazení: GitHub → Vercel (auto-deploy při push na `main`)
 - Repozitář: `janvoznak/sprava-nemovitosti`
-- Live URL: https://sprava-nemovitosti.vercel.app
+- Live URL: https://sprava-nemovitosti-claude.vercel.app
+- Vercel projekt: `sprava-nemovitosti-claude` (GitHub integrace míří sem; starý projekt `sprava-nemovitosti` je nepoužívaný a zastaralý)
+- `vercel.json` obsahuje SPA rewrite na `index.html` (nutné kvůli `createWebHistory`)
 
 ## Tech Stack
 - **Frontend**: Vue 3 (Composition API + `<script setup>`) + Vite 5

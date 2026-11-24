@@ -126,7 +126,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav.vue';
 import { useNotification } from '@/composables/useNotification';
 
 const router = useRouter();
-const { showSuccess } = useNotification();
+const { showSuccess, showError } = useNotification();
 const fileInput = ref(null);
 const previews = ref([]);
 const files = ref([]);
@@ -162,7 +162,7 @@ const removePhoto = (index) => {
 const submit = () => {
   // Validate basic fields (mock)
   if (!form.propertyId || !form.description) {
-    alert('Vyplňte prosím nemovitost a popis závady.');
+    showError('Vyplňte prosím nemovitost a popis závady.');
     return;
   }
 

@@ -11,7 +11,7 @@
       </div>
       <div class="header-actions">
         <!-- Optional Global Action Button -->
-        <button v-if="mainAction" @click="$emit('main-action')" class="btn-primary">
+        <button v-if="mainAction" @click="onMainAction" class="btn-primary">
           <span class="material-icons">{{ mainAction.icon }}</span> {{ mainAction.label }}
         </button>
       </div>
@@ -97,7 +97,7 @@
                 <button 
                   v-for="action in actions" 
                   :key="action.key"
-                  @click="$emit('row-action', { action: action.key, item })"
+                  @click="onRowAction(action, item)"
                   class="action-btn"
                   :class="action.class"
                   :title="action.label"
@@ -148,6 +148,29 @@
         </div>
       </div>
     </div>
+
+    <!-- Add-record modal (prototype: stores in memory for the session) -->
+    <div v-if="showAddModal" class="modal-backdrop" @click.self="showAddModal = false">
+      <form class="add-modal" @submit.prevent="saveNewItem">
+        <h2>{{ mainAction ? mainAction.label : 'Nový záznam' }}</h2>
+        <label v-for="col in columns" :key="col.key" class="form-field">
+          <span>{{ col.label }}</span>
+          <select v-if="col.type === 'status'" v-model="newItem[col.key]">
+            <option v-for="st in statusOptions(col.key)" :key="st" :value="st">{{ st }}</option>
+          </select>
+          <input v-else-if="col.type === 'currency'" type="number" min="0" v-model.number="newItem[col.key]">
+          <input v-else-if="col.type === 'rating'" type="number" min="1" max="5" v-model.number="newItem[col.key]">
+          <input v-else type="text" v-model="newItem[col.key]">
+        </label>
+        <p v-if="formError" class="form-error">{{ formError }}</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" @click="showAddModal = false">Zrušit</button>
+          <button type="submit" class="btn-save">Uložit</button>
+        </div>
+      </form>
+    </div>
+
+    <div v-if="toast" class="gl-toast">{{ toast }}</div>
   </div>
 </template>
 
@@ -170,6 +193,61 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['main-action', 'row-action']);
+
+// Local copy so records added in the prototype show up immediately
+const localItems = ref([...(props.items || [])]);
+watch(() => props.items, (v) => { localItems.value = [...(v || [])]; });
+
+const showAddModal = ref(false);
+const newItem = ref({});
+const formError = ref('');
+const toast = ref('');
+let toastTimer = null;
+const showToast = (msg) => {
+  toast.value = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value = ''; }, 3000);
+};
+
+const statusOptions = (key) => {
+  const set = new Set((localItems.value || []).map(i => i[key]).filter(Boolean));
+  return set.size ? [...set] : ['Nové'];
+};
+
+const onMainAction = () => {
+  emit('main-action');
+  newItem.value = {};
+  (props.columns || []).forEach(col => {
+    if (col.type === 'status') newItem.value[col.key] = statusOptions(col.key)[0];
+    else if (col.type === 'currency') newItem.value[col.key] = 0;
+    else if (col.type === 'rating') newItem.value[col.key] = 5;
+    else newItem.value[col.key] = '';
+  });
+  formError.value = '';
+  showAddModal.value = true;
+};
+
+const saveNewItem = () => {
+  const firstText = (props.columns || []).find(c => !c.type);
+  if (firstText && !String(newItem.value[firstText.key] || '').trim()) {
+    formError.value = `Vyplňte pole „${firstText.label}".`;
+    return;
+  }
+  const nextId = Math.max(0, ...localItems.value.map(i => Number(i.id) || 0)) + 1;
+  localItems.value = [{ id: nextId, ...newItem.value }, ...localItems.value];
+  showAddModal.value = false;
+  currentPage.value = 1;
+  showToast('Záznam byl přidán');
+};
+
+const onRowAction = (action, item) => {
+  emit('row-action', { action: action.key, item });
+  if (action.key === 'call' && item.phone) {
+    window.location.href = `tel:${String(item.phone).replace(/\s+/g, '')}`;
+  } else {
+    showToast(`${action.label}: akce je v prototypu simulována`);
+  }
+};
 
 const searchQuery = ref('');
 const activeFilters = ref({});
@@ -209,9 +287,7 @@ const getStatusClass = (status) => {
 
 // Filtering Logic
 const filteredItems = computed(() => {
-  if (!props.items) return [];
-  
-  return props.items.filter(item => {
+  return localItems.value.filter(item => {
     // 1. Search Query
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
@@ -562,5 +638,34 @@ const visiblePages = computed(() => {
 
 .page-number.delimiter {
   cursor: default;
+}
+
+/* Add-record modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+  display: flex; align-items: center; justify-content: center; z-index: 300; padding: 1rem;
+}
+.add-modal {
+  background: #fff; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 460px;
+  display: flex; flex-direction: column; gap: 0.875rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+.add-modal h2 { font-size: 1.25rem; color: #0f172a; margin-bottom: 0.25rem; }
+.form-field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8125rem; font-weight: 600; color: #475569; }
+.form-field input, .form-field select {
+  padding: 0.625rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-weight: 400; color: #0f172a;
+}
+.form-error { color: #b91c1c; font-size: 0.8125rem; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
+.btn-secondary { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer; font: inherit; }
+.btn-save { background: #00C853; color: #fff; border: none; border-radius: 8px; padding: 0.5rem 1.25rem; cursor: pointer; font: inherit; font-weight: 600; }
+.gl-toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: #0f172a; color: #fff; padding: 0.75rem 1.25rem; border-radius: 8px; z-index: 400; font-size: 0.875rem;
+}
+
+@media (max-width: 767px) {
+  .generic-list-view { padding: 0; }
+  .list-header { flex-wrap: wrap; gap: 0.75rem; }
+  .content-card { overflow-x: auto; }
 }
 </style>

@@ -30,17 +30,17 @@
     <div v-else class="dashboard-content">
       <div class="dashboard-grid-container">
       <GridLayout
-        v-model:layout="layout"
-        :col-num="12"
+        v-model:layout="activeLayout"
+        :col-num="isMobile ? 1 : 12"
         :row-height="30"
-        :is-draggable="true"
-        :is-resizable="true"
-        :responsive="true"
+        :is-draggable="!isMobile"
+        :is-resizable="!isMobile"
+        :responsive="false"
         :vertical-compact="true"
         :use-css-transforms="true"
       >
         <GridItem
-          v-for="item in layout"
+          v-for="item in activeLayout"
           :key="item.i"
           :x="item.x"
           :y="item.y"
@@ -66,7 +66,7 @@
               <span class="date-badge-simple">{{ currentDateFormatted }}</span>
             </div>
             <div class="briefing-content">
-              <p class="briefing-subtitle">Dnes vyžadují vaši pozornost <span class="highlight">{{ criticalIssuesCount }}</span> věci:</p>
+              <p class="briefing-subtitle">Dnes vyžadují vaši pozornost <span class="highlight">{{ criticalIssuesCount }}</span> {{ attentionWord }}:</p>
               <div class="action-items">
                 <div v-if="debtorsCount > 0" class="action-item red">
                   <span class="material-icons">payments</span>
@@ -159,38 +159,20 @@
              <div class="section-header">
                <h3>
                  <span class="material-icons">calendar_today</span>
-                 Kalendář - Únor
+                 Kalendář - {{ calendarMonthName }}
                </h3>
              </div>
              <div class="calendar-list">
-               <div 
+               <div
+                 v-for="ev in calendarEvents"
+                 :key="ev.title"
                  class="calendar-item interactive"
-                 @click="$router.push({ path: '/maintenance/calendar', query: { date: `${new Date().getFullYear()}-02-15` } })"
+                 @click="$router.push({ path: '/maintenance/calendar', query: { date: ev.iso } })"
                >
-                 <div class="date-badge">15.2.</div>
+                 <div class="date-badge" :class="{ warning: ev.warning }">{{ ev.label }}</div>
                  <div class="event-details">
-                   <div class="event-title">Splatnost nájemného</div>
-                   <div class="event-desc">Automatická kontrola (12 bytů)</div>
-                 </div>
-               </div>
-               <div 
-                 class="calendar-item interactive"
-                 @click="$router.push({ path: '/maintenance/calendar', query: { date: `${new Date().getFullYear()}-02-20` } })"
-               >
-                 <div class="date-badge warning">20.2.</div>
-                 <div class="event-details">
-                   <div class="event-title">Revize plynu</div>
-                   <div class="event-desc">Václavské nám. 42</div>
-                 </div>
-               </div>
-               <div 
-                 class="calendar-item interactive"
-                 @click="$router.push({ path: '/maintenance/calendar', query: { date: `${new Date().getFullYear()}-02-25` } })"
-               >
-                 <div class="date-badge">25.2.</div>
-                 <div class="event-details">
-                   <div class="event-title">Konec smlouvy</div>
-                   <div class="event-desc">Byt 301 - Kovář</div>
+                   <div class="event-title">{{ ev.title }}</div>
+                   <div class="event-desc">{{ ev.desc }}</div>
                  </div>
                </div>
              </div>
@@ -259,7 +241,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { propertyService } from '@/services/propertyService'
 import AlertsWidget from '@/components/dashboard/AlertsWidget.vue'
 import DebtAlertWidget from '@/components/dashboard/DebtAlertWidget.vue'
@@ -280,26 +262,26 @@ const toggleEditMode = () => {
 
 
 // Initial Layout Configuration
-const STORAGE_KEY = 'dashboard-layout-v2'
+const STORAGE_KEY = 'dashboard-layout-v3'
 
 const defaultLayout = [
-  // Row 1: Briefing
-  { x: 0, y: 0, w: 12, h: 5, i: 'briefing' },
-  
-  // Row 2: KPIs & Chart
-  { x: 0, y: 5, w: 4, h: 4, i: 'kpi-revenue' },
-  { x: 4, y: 5, w: 4, h: 4, i: 'kpi-expenses' },
-  { x: 8, y: 5, w: 4, h: 7, i: 'occupancy-chart' },
-  
+  // Row 1: Briefing (full width)
+  { x: 0, y: 0, w: 12, h: 7, i: 'briefing' },
+
+  // Row 2: KPIs + occupancy chart / quick actions
+  { x: 0, y: 7, w: 4, h: 5, i: 'kpi-revenue' },
+  { x: 4, y: 7, w: 4, h: 5, i: 'kpi-expenses' },
+  { x: 8, y: 7, w: 4, h: 7, i: 'occupancy-chart' },
+
   // Row 3: Lists & Calendar
-  { x: 0, y: 9, w: 4, h: 8, i: 'lease-expirations' },
-  { x: 4, y: 9, w: 4, h: 8, i: 'calendar' },
-  { x: 8, y: 12, w: 4, h: 5, i: 'quick-actions' },
-  
-  // Row 4: Bottom Lists
-  { x: 0, y: 17, w: 4, h: 10, i: 'debt-alerts' },
-  { x: 4, y: 17, w: 4, h: 10, i: 'maintenance-overview' },
-  { x: 8, y: 17, w: 4, h: 10, i: 'top-debtors' },
+  { x: 0, y: 12, w: 4, h: 9, i: 'lease-expirations' },
+  { x: 4, y: 12, w: 4, h: 9, i: 'calendar' },
+  { x: 8, y: 14, w: 4, h: 7, i: 'quick-actions' },
+
+  // Row 4: Bottom lists
+  { x: 0, y: 21, w: 4, h: 11, i: 'debt-alerts' },
+  { x: 4, y: 21, w: 4, h: 11, i: 'maintenance-overview' },
+  { x: 8, y: 21, w: 4, h: 11, i: 'top-debtors' },
 ]
 
 const getSavedLayout = () => {
@@ -321,6 +303,29 @@ const getSavedLayout = () => {
 
 const layout = ref(getSavedLayout())
 
+// Mobile: single stacked column (the 12-column grid is unusable on a phone)
+const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 768)
+const onResize = () => { isMobile.value = window.innerWidth < 768 }
+onMounted(() => window.addEventListener('resize', onResize))
+onBeforeUnmount(() => window.removeEventListener('resize', onResize))
+
+const MOBILE_HEIGHTS = { briefing: 12, 'kpi-revenue': 5, 'kpi-expenses': 4, 'occupancy-chart': 8, 'lease-expirations': 9, calendar: 9, 'quick-actions': 7, 'debt-alerts': 11, 'maintenance-overview': 11, 'top-debtors': 11 }
+const mobileLayout = computed(() => {
+  let y = 0
+  return [...layout.value]
+    .sort((a, b) => a.y - b.y || a.x - b.x)
+    .map(item => {
+      const h = MOBILE_HEIGHTS[item.i] || item.h
+      const out = { ...item, x: 0, y, w: 1, h }
+      y += h
+      return out
+    })
+})
+const activeLayout = computed({
+  get: () => (isMobile.value ? mobileLayout.value : layout.value),
+  set: (val) => { if (!isMobile.value) layout.value = val }
+})
+
 watch(layout, (newLayout) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newLayout))
 }, { deep: true })
@@ -338,8 +343,36 @@ const resetLayout = () => {
   }
 }
 
+const attentionWord = computed(() => {
+  const n = criticalIssuesCount.value
+  return n === 1 ? 'věc' : n >= 2 && n <= 4 ? 'věci' : 'věcí'
+})
+
+const calendarMonthName = computed(() => {
+  const n = new Date().toLocaleDateString('cs-CZ', { month: 'long' })
+  return n.charAt(0).toUpperCase() + n.slice(1)
+})
+
+// Upcoming events always relative to today (15th, 20th, 25th of the current month, rolling forward)
+const calendarEvents = computed(() => {
+  const now = new Date()
+  const mk = (day, title, desc, warning = false) => {
+    let d = new Date(now.getFullYear(), now.getMonth(), day)
+    if (d < new Date(now.getFullYear(), now.getMonth(), now.getDate())) d = new Date(now.getFullYear(), now.getMonth() + 1, day)
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return { title, desc, warning, iso, label: `${d.getDate()}.${d.getMonth() + 1}.`, ts: d.getTime() }
+  }
+  const firstProp = properties.value[0]
+  return [
+    mk(15, 'Splatnost nájemného', `Automatická kontrola (${properties.value.length} nemovitostí)`),
+    mk(20, 'Revize plynu', firstProp ? firstProp.name : 'Plánovaná revize', true),
+    mk(25, 'Konec smlouvy', 'Dle evidence nájemních smluv')
+  ].sort((a, b) => a.ts - b.ts)
+})
+
 const currentDateFormatted = computed(() => {
-  return new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' })
+  const d = new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' })
+  return d.charAt(0).toUpperCase() + d.slice(1)
 })
 
 const greeting = computed(() => {
@@ -353,8 +386,9 @@ const expiredRevisionsCount = computed(() => {
   return properties.value.filter(p => p.revisionStatus && p.revisionStatus.expired).length
 })
 
+// Number of attention categories shown in the briefing (not the sum of units/debtors)
 const criticalIssuesCount = computed(() => {
-  return debtorsCount.value + expiredRevisionsCount.value + vacantUnitsCount.value
+  return [debtorsCount.value, expiredRevisionsCount.value, vacantUnitsCount.value].filter(n => n > 0).length
 })
 
 // Load properties data
@@ -452,11 +486,12 @@ const averageRent = computed(() => {
 // Chart Data: Mock revenue data for last 6 months
 const revenueData = computed(() => {
   const monthly = monthlyRevenue.value
-  const months = ['Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec', 'Leden']
-  // Generate a slightly more realistic trend (e.g. mostly up)
-  return months.map((month, i) => ({
-    month,
-    value: monthly * (0.85 + (i * 0.02) + Math.random() * 0.1)
+  const names = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec']
+  const nowMonth = new Date().getMonth()
+  const wobble = [0.00, 0.03, -0.01, 0.04, 0.02, 0.05] // deterministic, mostly upward trend
+  return wobble.map((w, i) => ({
+    month: names[(nowMonth - (wobble.length - 1 - i) + 12) % 12],
+    value: monthly * (0.9 + i * 0.02 + w)
   }))
 })
 
@@ -662,7 +697,6 @@ const formatCurrency = (value, simplify = false) => {
   font-size: 0.9rem;
   color: #64748b;
   font-weight: 500;
-  text-transform: capitalize;
 }
 
 .briefing-subtitle {
@@ -1018,5 +1052,14 @@ const formatCurrency = (value, simplify = false) => {
 
 .remove-btn .material-icons {
   font-size: 14px;
+}
+
+@media (max-width: 767px) {
+  .dashboard-view { padding: 0; }
+  .dashboard-header { flex-wrap: wrap; gap: 0.5rem; }
+  .briefing-card { padding: 1rem; }
+  .briefing-header { flex-wrap: wrap; gap: 0.25rem; }
+  .action-items { gap: 0.5rem; }
+  .action-item { flex-wrap: wrap; width: 100%; }
 }
 </style>
